@@ -25,7 +25,7 @@ If a new channel can be created from the existing channel it will be a `fork`. T
 
 From the forks from and to the channels a "tree of life" can be constructed. Tree of life contains all the forks out of the current channel, thus creating some kind of document or data taxonomy system.
 
-Newly created channel has version number 1 and does not have a main file.
+Newly created channel has version number 1 and does not have a main file. Creating a fork creates always a new channel.
  
 In JSON format the directory files could be shown as follows:
 
