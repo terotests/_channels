@@ -33,9 +33,9 @@ In JSON format the directory files could be shown as follows:
 {
     "journal.1"  : "<newline separated JSON encoded commands for version 1>",
     "journal.2"  : "<newline separated JSON encoded commands for version 2>",
-    "file.2"     : "<JSON object used as base for journal.2, starting from version 2>",
+    "file.2"     : "<JSON object Main file of version 2>",
     "ch.settings" : "<JSON encoded settings object>",
-    "forks" : "<newline separated fork information - almost same as settings>",
+    "forks" : "<newline separated forks from this channel>",
     
 }
 ```
