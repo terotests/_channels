@@ -4,6 +4,50 @@ This a work in progress for multichannel databroadcasting service with forking c
 
 The first milestone is to create simulation environment in browser.
 
+# What is a channel?
+
+Channel is basicly a directory containing information about some Object, usually a JSON object and it's change history, known as `journal`
+
+The directory for channel contains usually following files
+
+ 1. Journal files
+ 2. Main files, which are the root files which the journal commands alter
+ 3. settings file for the channel
+ 4. list of forks out from this channel
+ 
+In JSON format the directory files could be shown as follows:
+
+```javascript
+{
+    "journal.1"  : "<newline separated JSON encoded commands for version 1>",
+    "journal.2"  : "<newline separated JSON encoded commands for version 2>",
+    "file.2"     : "<JSON object used as base for journal.2, starting from version 2>",
+    "ch.settings" : "<JSON encoded settings object>",
+    "forks" : "<newline separated fork information - almost same as settings>",
+    
+}
+```
+
+The settings file has information about the current version and if the channel has been forked from other channel.
+
+If the channel is a fork, also the forking point, including version and journal line number is saved into settings.
+The settings object is essentially same as the object in "forks".
+
+```javascript
+{
+    fromJournalLine : 23,               // from which line the fork starts
+    version : 1,                        // version of the channel
+    channelId : "path/to/my/channel",   // ID of this channel
+    fromVersion : 2,                    // version of the fork's source
+    from : "path/to/forked/challe",     // the fork channels ID
+    to :  "path/to/my/channel",         // forks target channel
+    name : "reason for the forking",
+    utc : 14839287897                   // UTC timestamp of creation
+}
+```
+
+
+
 ## Setting a virtual filesystem for server
 
 The virtual server needs a virtual filesystem, the [jayFuzz](https://github.com/terotests/jayFuzz) virtual filesystem is supported.
