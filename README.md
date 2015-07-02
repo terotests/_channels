@@ -10,10 +10,22 @@ Channel is basicly a directory containing information about some Object, usually
 
 The directory for channel contains usually following files
 
- 1. Journal files
- 2. Main files, which are the root files which the journal commands alter
- 3. settings file for the channel
+ 1. *Journal files*, which collect the commands that alter the tree
+ 2. *Main files*, which are the root files which the journal commands alter
+ 3. settings of the channel
  4. list of forks out from this channel
+
+Journal collects all operations for the channel objects, like writes, deletes, moves of items etc.
+
+If the journal gets too big, `snapshot` can be created, the version number of the channel is then incremented
+and a new Main file is created according to new empty journal file. The settings file is always updated to have the 
+current version and number of lines in the journal - usually the number of lines is kept in the memory too.
+
+If a new channel can be created from the existing channel it will be a `fork`. The fork's settings file will have a pointer to it's parent channel and information about the branching point. The channel which was forked will also have the "forks" file updated.
+
+From the forks from and to the channels a "tree of life" can be constructed.
+
+Newly created channel has version number 1 and does not have a main file.
  
 In JSON format the directory files could be shown as follows:
 
