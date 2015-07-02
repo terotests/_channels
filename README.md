@@ -71,7 +71,7 @@ var filesystem = fsServerMemory("memoryServer1", {});
 
 Also node.js and IndexedDB virtual filesystem is available
 
-## Setting a virtual socket.io server for server
+## Setting a virtual socket.io server 
 
 The socket.io abstraction can simulate multiple servers in browser. To create server socket accepting incoming connections use 
 [Socket emulator](https://github.com/terotests/socketEmulator) 
