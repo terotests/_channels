@@ -9,66 +9,6 @@
   var _channels_prototype = function _channels_prototype() {
     // Then create the traits and subclasses for this class here...
 
-    // trait comes here...
-
-    (function (_myTrait_) {
-      var _eventOn;
-      var _commands;
-
-      // Initialize static variables here...
-
-      /**
-       * @param float t
-       */
-      _myTrait_.guid = function (t) {
-
-        return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-        //return Math.random();
-        // return Math.random().toString(36);
-
-        /*    
-        return Math.random().toString(36).substring(2, 15) +
-        Math.random().toString(36).substring(2, 15);
-        */
-        /*        
-        function s4() {
-        return Math.floor((1 + Math.random()) * 0x10000)
-               .toString(16)
-               .substring(1);
-        }
-        return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-        s4() + '-' + s4() + s4() + s4();*/
-      };
-
-      /**
-       * @param float t
-       */
-      _myTrait_.isArray = function (t) {
-
-        if (typeof t == 'undefined') return this.__isA;
-
-        return Object.prototype.toString.call(t) === '[object Array]';
-      };
-
-      /**
-       * @param float fn
-       */
-      _myTrait_.isFunction = function (fn) {
-        return Object.prototype.toString.call(fn) == '[object Function]';
-      };
-
-      /**
-       * @param float t
-       */
-      _myTrait_.isObject = function (t) {
-
-        if (typeof t == 'undefined') return this.__isO;
-
-        return t === Object(t);
-      };
-    })(this);
-
     // the subclass definition comes around here then
 
     // The class definition is here...
@@ -1008,8 +948,6 @@
       // trait comes here...
 
       (function (_myTrait_) {
-        var _eventOn;
-        var _commands;
 
         // Initialize static variables here...
 
@@ -1019,31 +957,12 @@
         _myTrait_.guid = function (t) {
 
           return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-          //return Math.random();
-          // return Math.random().toString(36);
-
-          /*    
-          return Math.random().toString(36).substring(2, 15) +
-          Math.random().toString(36).substring(2, 15);
-          */
-          /*        
-          function s4() {
-          return Math.floor((1 + Math.random()) * 0x10000)
-               .toString(16)
-               .substring(1);
-          }
-          return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-          s4() + '-' + s4() + s4() + s4();*/
         };
 
         /**
          * @param float t
          */
         _myTrait_.isArray = function (t) {
-
-          if (typeof t == 'undefined') return this.__isA;
-
           return Object.prototype.toString.call(t) === '[object Array]';
         };
 
@@ -1058,8 +977,6 @@
          * @param float t
          */
         _myTrait_.isObject = function (t) {
-
-          if (typeof t == 'undefined') return this.__isO;
 
           return t === Object(t);
         };

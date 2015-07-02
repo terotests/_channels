@@ -157,17 +157,6 @@ Current for documentation see source code of _localChannelModel or _channelContr
     
     
     
-##### trait _dataTrait
-
-- [guid](README.md#_dataTrait_guid)
-- [isArray](README.md#_dataTrait_isArray)
-- [isFunction](README.md#_dataTrait_isFunction)
-- [isObject](README.md#_dataTrait_isObject)
-
-
-    
-    
-    
     
     
     
@@ -249,8 +238,6 @@ Current for documentation see source code of _localChannelModel or _channelContr
 
 
 
-      
-    
       
     
       
@@ -441,72 +428,6 @@ The class has following internal singleton variables:
 
 
    
-    
-    
-    
-## trait _dataTrait
-
-The class has following internal singleton variables:
-        
-* _eventOn
-        
-* _commands
-        
-        
-### <a name="_dataTrait_guid"></a>_dataTrait::guid(t)
-
-
-```javascript
-
-return Math.random().toString(36).substring(2, 15) +
-        Math.random().toString(36).substring(2, 15);
-        
-//return Math.random();
-// return Math.random().toString(36);
-        
-/*    
-return Math.random().toString(36).substring(2, 15) +
-        Math.random().toString(36).substring(2, 15);
-*/
-/*        
-function s4() {
-    return Math.floor((1 + Math.random()) * 0x10000)
-               .toString(16)
-               .substring(1);
-  }
-
-return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-       s4() + '-' + s4() + s4() + s4();*/
-```
-
-### <a name="_dataTrait_isArray"></a>_dataTrait::isArray(t)
-
-
-```javascript
-
-if(typeof(t)=="undefined") return this.__isA;
-
-return Object.prototype.toString.call( t ) === '[object Array]';
-```
-
-### <a name="_dataTrait_isFunction"></a>_dataTrait::isFunction(fn)
-
-
-```javascript
-return Object.prototype.toString.call(fn) == '[object Function]';
-```
-
-### <a name="_dataTrait_isObject"></a>_dataTrait::isObject(t)
-
-
-```javascript
-
-if(typeof(t)=="undefined") return this.__isO;
-
-return t === Object(t);
-```
-
-
     
     
     
@@ -1223,8 +1144,6 @@ if(i>=0) {
       
     
       
-    
-      
             
 # Class later
 
@@ -1554,10 +1473,6 @@ return myPromise;
 
 The class has following internal singleton variables:
         
-* _eventOn
-        
-* _commands
-        
         
 ### <a name="_dataTrait_guid"></a>_dataTrait::guid(t)
 
@@ -1566,32 +1481,13 @@ The class has following internal singleton variables:
 
 return Math.random().toString(36).substring(2, 15) +
         Math.random().toString(36).substring(2, 15);
-        
-//return Math.random();
-// return Math.random().toString(36);
-        
-/*    
-return Math.random().toString(36).substring(2, 15) +
-        Math.random().toString(36).substring(2, 15);
-*/
-/*        
-function s4() {
-    return Math.floor((1 + Math.random()) * 0x10000)
-               .toString(16)
-               .substring(1);
-  }
 
-return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-       s4() + '-' + s4() + s4() + s4();*/
 ```
 
 ### <a name="_dataTrait_isArray"></a>_dataTrait::isArray(t)
 
 
 ```javascript
-
-if(typeof(t)=="undefined") return this.__isA;
-
 return Object.prototype.toString.call( t ) === '[object Array]';
 ```
 
@@ -1606,8 +1502,6 @@ return Object.prototype.toString.call(fn) == '[object Function]';
 
 
 ```javascript
-
-if(typeof(t)=="undefined") return this.__isO;
 
 return t === Object(t);
 ```
