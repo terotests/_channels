@@ -51,7 +51,7 @@ The settings object is essentially same as the object in "forks".
     version : 1,                        // version of the channel
     channelId : "path/to/my/channel",   // ID of this channel
     fromVersion : 2,                    // version of the fork's source
-    from : "path/to/forked/challe",     // the fork channels ID
+    from : "path/to/forked/channel",    // the fork channels ID
     to :  "path/to/my/channel",         // forks target channel
     name : "reason for the forking",
     utc : 14839287897                   // UTC timestamp of creation
