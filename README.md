@@ -416,8 +416,6 @@ Current for documentation see source code of _localChannelModel or _channelContr
 
 The class has following internal singleton variables:
         
-* _initDone
-        
         
 ### _channels::constructor( host )
 

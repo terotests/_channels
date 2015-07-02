@@ -2199,7 +2199,6 @@
     }).call(new Function('return this')());
 
     (function (_myTrait_) {
-      var _initDone;
 
       // Initialize static variables here...
 
