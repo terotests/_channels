@@ -1787,12 +1787,9 @@ if(_instances[id]) {
 
 ### <a name="_localChannelModel__createChannelDir"></a>_localChannelModel::_createChannelDir(channelId)
 
-
+The channel ID should follow a normal path format like path/to/my/channel
 ```javascript
 
-// splitting the channel id into parts
-
-// remove the /path1/path2/file2.ch
 var str = channelId;
 if(str.charAt(0)=="/") str = str.substring(1);
 
@@ -1800,18 +1797,10 @@ var parts = str.split("/");
 var fs = this._fs,
     activeFolder = fs;
 
-// The channel id might be something like
-// path1/path2/file2.ch
-
-// The ACL might be in order at least in some cases to allow or disallow the users from
-// creating random channels to the system...
-
-var actions = [];
 var actPromise = _promise();
 var originalPromise = actPromise;
 var me = this;
 
-// parts.pop(); // remove the last item, which is the file
 
 parts.forEach( 
     function(pathStr) {
@@ -1839,17 +1828,7 @@ actPromise = actPromise.then( function() {
 });
 originalPromise.resolve(true);
 
-
 return actPromise;
-
-
-
-
-
-
-
-
-
 
 ```
 
