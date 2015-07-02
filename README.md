@@ -362,7 +362,6 @@ Current for documentation see source code of _localChannelModel or _channelContr
 #### Class _serverChannelMgr
 
 
-- [exampleCode](README.md#_serverChannelMgr_exampleCode)
 
 
 
@@ -1593,60 +1592,6 @@ The class has following internal singleton variables:
 * _socketRooms
         
         
-### <a name="_serverChannelMgr_exampleCode"></a>_serverChannelMgr::exampleCode(t)
-
-
-```javascript
-
-  // socket asks to join channel
-  socket.on("requestChannel", function(cData) {
-      console.log("Got request channel");
-      // console.log(cData);
-      if(!cData) {
-          console.log("Empty channel data");
-          return;
-      }
-      var authOk = false;
-      if(cData.auth) {
-          console.log("Authenticating");
-          console.log(JSON.stringify( cData.auth));
-          if(cData.auth.u && cData.auth.p) {
-              if(cData.auth.u=="abba") authOk = true;
-          }
-      } 
-      
-      if(!authOk) {
-          console.log("*** No authentication from IP ****");
-          socket.disconnect("unauthorized");
-          return;
-      }
-      
-
-      me.checkChannelInfo( cData, function(err, c) {
-          
-          if(err) {
-              console.log(err);
-              return;
-          }
-          
-          // console.log("*** OK, CHANNEL INFO OK ****");
-          // console.log(cData);
-          cData.io = io;
-          cData.main = me;
-          var channel = me.createChannel( cData );
-          
-          // Aske the socket to join the channel...
-          if(channel.join( socket, cData )) {
-              myChannels.push(channel);
-              console.log("the socket is now connected to "+myChannels.length+" channels");
-          }
-          console.log("About to join remote channel...");
-          me.joinRemoteChannel(cData);
-      });
-      
-  });
-```
-
 ### _serverChannelMgr::constructor( serverSocket, fileSystem )
 
 ```javascript
