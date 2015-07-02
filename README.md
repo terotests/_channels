@@ -6,7 +6,7 @@ The first milestone is to create simulation environment in browser.
 
 # What is a channel?
 
-Channel is basicly a directory containing information about some Object, usually a JSON object and it's change history, known as `journal`
+Channel is basicly a directory containing information about some Object, usually a JSON object and it's change history, known as `journal`. A server can have multiple channels, but each channel  has a message queue where messages to the channel are processed sequentially.
 
 The directory for channel contains usually following files
 
