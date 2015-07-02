@@ -18,7 +18,7 @@ Also node.js and IndexedDB virtual filesystem is available
 ## Setting a virtual socket.io server for server
 
 The socket.io abstraction can simulate multiple servers in browser. To create server socket accepting incoming connections use 
-[Socket emulator]https://github.com/terotests/socketEmulator) 
+[Socket emulator](https://github.com/terotests/socketEmulator) 
 
 ```javascript
 var server = _serverSocket("localhost", 1234);  
