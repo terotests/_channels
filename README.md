@@ -163,22 +163,22 @@ After joining the channel client can send commands to the servers Channel Contro
         });
 ``` 
 
-TODO: Documentation of the channel commands
+### TODO: Channel Message commands
 
 The supported commands at the moment are:
 
-    1. treeOfLife
-    2. readBuildTree
-    3. getForks
-    4. channelStatus 
-    5. fork 
-    6. snapshot
-    7. writeMain
-    8. readMain
-    9. readMainVersion 
-    10. writeJournal
-    11. readJournal
-    12. readJournalVersion
+1. treeOfLife
+2. readBuildTree
+3. getForks
+4. channelStatus 
+5. fork 
+6. snapshot
+7. writeMain
+8. readMain
+9. readMainVersion 
+10. writeJournal
+11. readJournal
+12. readJournalVersion
     
 Current for documentation see source code of _localChannelModel or _channelController.
 
