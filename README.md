@@ -115,8 +115,12 @@ client.on("connect", function() {
 Protocol is still "under construction"
 
 ## Authentication : "auth" 
+
+Currently the authentication does not really authenticate, however it is still required.
+
 ```javascript
-    client.send("auth", {userId : "username", password : "password"}).then( function(response) {
+    client.send("auth", {userId : "username", password : "password"})
+       .then( function(response) {
         // response.success == true if authenticated
     })
 ```   
