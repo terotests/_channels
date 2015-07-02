@@ -23,7 +23,7 @@ current version and number of lines in the journal - usually the number of lines
 
 If a new channel can be created from the existing channel it will be a `fork`. The fork's settings file will have a pointer to it's parent channel and information about the branching point. The channel which was forked will also have the "forks" file updated.
 
-From the forks from and to the channels a "tree of life" can be constructed.
+From the forks from and to the channels a "tree of life" can be constructed. Tree of life contains all the forks out of the current channel, thus creating some kind of document or data taxonomy system.
 
 Newly created channel has version number 1 and does not have a main file.
  
