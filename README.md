@@ -17,6 +17,30 @@ The directory for channel contains usually following files
 
 Journal collects all operations for the channel objects, like writes, deletes, moves of items etc.
 
+The Main file can have following structure:
+
+```javascript
+{
+   data : {},
+   __id : "myGuid"
+}
+```
+The journal is file has changes to the main file Object like this:
+
+```javascript
+[4,"x",50,null, "myGuid"]
+[4,"y",100,null, "myGuid"]
+```
+
+After which the main file would look something like this:
+
+```javascript
+{
+   data : { x: 50, y: 100},
+   __id : "myGuid"
+}
+```
+
 If the journal gets too big, `snapshot` can be created, the version number of the channel is then incremented
 and a new Main file is created according to new empty journal file. The settings file is always updated to have the 
 current version and number of lines in the journal - usually the number of lines is kept in the memory too.
