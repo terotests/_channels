@@ -1,4 +1,4 @@
-# _channels - forkable channel setup
+# _channels 
 
 This a work in progress for multichannel databroadcasting service with forking capabilities over socket.io.
 
