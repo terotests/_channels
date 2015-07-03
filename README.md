@@ -189,7 +189,18 @@ After joining the channel client can send commands to the servers Channel Contro
         });
 ``` 
 
-### TODO: Channel Message commands
+### Channel Commands
+
+The channel protocol messages have following format:
+
+```javascript
+{
+    channelId : "path/to/myChannel",    // channel Id
+    cmd : "<command name>",             // treeOfLife, fork, readMain etc.
+    data : ""                           // optional data to be sent
+}
+``` 
+The best documentation of commands is the [Source Code starting from here](https://github.com/terotests/_channels/blob/master/README.md#_localChannelModel_fork)
 
 The supported commands at the moment are:
 
