@@ -1,5 +1,5 @@
 // The code template begins here
-'use strict';
+"use strict";
 
 (function () {
 
@@ -8,6 +8,221 @@
   // The class definition is here...
   var _channels_prototype = function _channels_prototype() {
     // Then create the traits and subclasses for this class here...
+
+    // the subclass definition comes around here then
+
+    // The class definition is here...
+    var later_prototype = function later_prototype() {
+      // Then create the traits and subclasses for this class here...
+
+      (function (_myTrait_) {
+        var _initDone;
+        var _callers;
+        var _oneTimers;
+        var _everies;
+        var _framers;
+
+        // Initialize static variables here...
+
+        /**
+         * @param function fn
+         * @param float thisObj
+         * @param float args
+         */
+        _myTrait_.add = function (fn, thisObj, args) {
+          if (thisObj || args) {
+            var tArgs;
+            if (Object.prototype.toString.call(args) === "[object Array]") {
+              tArgs = args;
+            } else {
+              tArgs = Array.prototype.slice.call(arguments, 2);
+              if (!tArgs) tArgs = [];
+            }
+            _callers.push([thisObj, fn, tArgs]);
+          } else {
+            _callers.push(fn);
+          }
+        };
+
+        /**
+         * @param function fn
+         */
+        _myTrait_.asap = function (fn) {
+          this.add(fn);
+        };
+
+        /**
+         * @param float seconds
+         * @param float fn
+         * @param float name
+         */
+        _myTrait_.every = function (seconds, fn, name) {
+
+          if (!name) {
+            name = "time" + new Date().getTime() + Math.random(10000000);
+          }
+
+          _everies[name] = {
+            step: Math.floor(seconds * 1000),
+            fn: fn,
+            nextTime: 0
+          };
+        };
+
+        if (_myTrait_.__traitInit && !_myTrait_.hasOwnProperty("__traitInit")) _myTrait_.__traitInit = _myTrait_.__traitInit.slice();
+        if (!_myTrait_.__traitInit) _myTrait_.__traitInit = [];
+        _myTrait_.__traitInit.push(function (interval, fn) {
+          if (!_initDone) {
+
+            var frame, cancelFrame;
+
+            this.polyfill();
+
+            if (typeof window != "undefined") {
+              var frame = window["requestAnimationFrame"],
+                  cancelFrame = window["cancelRequestAnimationFrame"];
+              ["", "ms", "moz", "webkit", "o"].forEach(function (x) {
+                if (!frame) {
+                  frame = window[x + "RequestAnimationFrame"];
+                  cancelFrame = window[x + "CancelAnimationFrame"] || window[x + "CancelRequestAnimationFrame"];
+                }
+              });
+            }
+
+            if (!frame) frame = function (cb) {
+              return setTimeout(cb, 16);
+            };
+
+            if (!cancelFrame) cancelFrame = function (id) {
+              clearTimeout(id);
+            };
+
+            _callers = [];
+            _oneTimers = {};
+            _everies = {};
+            _framers = [];
+            var lastMs = 0;
+
+            var _callQueQue = function _callQueQue() {
+              var ms = new Date().getTime();
+              var fn;
+              while (fn = _callers.shift()) {
+                if (Object.prototype.toString.call(fn) === "[object Array]") {
+                  fn[1].apply(fn[0], fn[2]);
+                } else {
+                  fn();
+                }
+              }
+
+              for (var i = 0; i < _framers.length; i++) {
+                var fFn = _framers[i];
+                fFn();
+              }
+
+              for (var n in _oneTimers) {
+                if (_oneTimers.hasOwnProperty(n)) {
+                  var v = _oneTimers[n];
+                  v[0](v[1]);
+                  delete _oneTimers[n];
+                }
+              }
+
+              for (var n in _everies) {
+                if (_everies.hasOwnProperty(n)) {
+                  var v = _everies[n];
+                  if (v.nextTime < ms) {
+                    v.fn();
+                    v.nextTime = ms + v.step;
+                  }
+                  if (v.until) {
+                    if (v.until < ms) {
+                      delete _everies[n];
+                    }
+                  }
+                }
+              }
+
+              frame(_callQueQue);
+              lastMs = ms;
+            };
+            _callQueQue();
+            _initDone = true;
+          }
+        });
+
+        /**
+         * @param  key
+         * @param float fn
+         * @param float value
+         */
+        _myTrait_.once = function (key, fn, value) {
+          // _oneTimers
+
+          _oneTimers[key] = [fn, value];
+        };
+
+        /**
+         * @param function fn
+         */
+        _myTrait_.onFrame = function (fn) {
+
+          _framers.push(fn);
+        };
+
+        /**
+         * @param float t
+         */
+        _myTrait_.polyfill = function (t) {};
+
+        /**
+         * @param float fn
+         */
+        _myTrait_.removeFrameFn = function (fn) {
+
+          var i = _framers.indexOf(fn);
+          if (i >= 0) {
+            if (fn._onRemove) {
+              fn._onRemove();
+            }
+            _framers.splice(i, 1);
+            return true;
+          } else {
+            return false;
+          }
+        };
+      })(this);
+    };
+
+    var later = function later(a, b, c, d, e, f, g, h) {
+      var m = this,
+          res;
+      if (m instanceof later) {
+        var args = [a, b, c, d, e, f, g, h];
+        if (m.__factoryClass) {
+          m.__factoryClass.forEach(function (initF) {
+            res = initF.apply(m, args);
+          });
+          if (typeof res == "function") {
+            if (res._classInfo.name != later._classInfo.name) return new res(a, b, c, d, e, f, g, h);
+          } else {
+            if (res) return res;
+          }
+        }
+        if (m.__traitInit) {
+          m.__traitInit.forEach(function (initF) {
+            initF.apply(m, args);
+          });
+        } else {
+          if (typeof m.init == "function") m.init.apply(m, args);
+        }
+      } else return new later(a, b, c, d, e, f, g, h);
+    };
+    // inheritance is here
+
+    later._classInfo = {
+      name: "later"
+    };
+    later.prototype = new later_prototype();
 
     // the subclass definition comes around here then
 
@@ -25,14 +240,14 @@
          * @param float someVar
          */
         _myTrait_.isArray = function (someVar) {
-          return Object.prototype.toString.call(someVar) === '[object Array]';
+          return Object.prototype.toString.call(someVar) === "[object Array]";
         };
 
         /**
          * @param Function fn
          */
         _myTrait_.isFunction = function (fn) {
-          return Object.prototype.toString.call(fn) == '[object Function]';
+          return Object.prototype.toString.call(fn) == "[object Function]";
         };
 
         /**
@@ -42,248 +257,6 @@
           return obj === Object(obj);
         };
       })(this);
-
-      // the subclass definition comes around here then
-
-      // The class definition is here...
-      var later_prototype = function later_prototype() {
-        // Then create the traits and subclasses for this class here...
-
-        (function (_myTrait_) {
-          var _initDone;
-          var _callers;
-          var _oneTimers;
-          var _everies;
-          var _framers;
-
-          // Initialize static variables here...
-
-          /**
-           * @param function fn
-           * @param float thisObj
-           * @param float args
-           */
-          _myTrait_.add = function (fn, thisObj, args) {
-            if (thisObj || args) {
-              var tArgs;
-              if (Object.prototype.toString.call(args) === '[object Array]') {
-                tArgs = args;
-              } else {
-                tArgs = Array.prototype.slice.call(arguments, 2);
-                if (!tArgs) tArgs = [];
-              }
-              _callers.push([thisObj, fn, tArgs]);
-            } else {
-              _callers.push(fn);
-            }
-          };
-
-          /**
-           * @param float seconds
-           * @param float fn
-           * @param float name
-           */
-          _myTrait_.after = function (seconds, fn, name) {
-
-            if (!name) {
-              name = 'time' + new Date().getTime() + Math.random(10000000);
-            }
-
-            _everies[name] = {
-              step: Math.floor(seconds * 1000),
-              fn: fn,
-              nextTime: 0,
-              remove: true
-            };
-          };
-
-          /**
-           * @param function fn
-           */
-          _myTrait_.asap = function (fn) {
-            this.add(fn);
-          };
-
-          /**
-           * @param float seconds
-           * @param float fn
-           * @param float name
-           */
-          _myTrait_.every = function (seconds, fn, name) {
-
-            if (!name) {
-              name = 'time' + new Date().getTime() + Math.random(10000000);
-            }
-
-            _everies[name] = {
-              step: Math.floor(seconds * 1000),
-              fn: fn,
-              nextTime: 0
-            };
-          };
-
-          if (_myTrait_.__traitInit && !_myTrait_.hasOwnProperty('__traitInit')) _myTrait_.__traitInit = _myTrait_.__traitInit.slice();
-          if (!_myTrait_.__traitInit) _myTrait_.__traitInit = [];
-          _myTrait_.__traitInit.push(function (interval, fn) {
-            if (!_initDone) {
-
-              this.polyfill();
-
-              var frame, cancelFrame;
-              if (typeof window != 'undefined') {
-                var frame = window['requestAnimationFrame'],
-                    cancelFrame = window['cancelRequestAnimationFrame'];
-                ['', 'ms', 'moz', 'webkit', 'o'].forEach(function (x) {
-                  if (!frame) {
-                    frame = window[x + 'RequestAnimationFrame'];
-                    cancelFrame = window[x + 'CancelAnimationFrame'] || window[x + 'CancelRequestAnimationFrame'];
-                  }
-                });
-              }
-
-              if (!frame) frame = function (cb) {
-                return setTimeout(cb, 16);
-              };
-
-              if (!cancelFrame) cancelFrame = function (id) {
-                clearTimeout(id);
-              };
-
-              _callers = [];
-              _oneTimers = {};
-              _everies = {};
-              _framers = [];
-              var lastMs = 0;
-
-              var _callQueQue = function _callQueQue() {
-                var ms = new Date().getTime();
-                var fn;
-                while (fn = _callers.shift()) {
-                  if (Object.prototype.toString.call(fn) === '[object Array]') {
-                    fn[1].apply(fn[0], fn[2]);
-                  } else {
-                    fn();
-                  }
-                }
-
-                for (var i = 0; i < _framers.length; i++) {
-                  var fFn = _framers[i];
-                  fFn();
-                }
-
-                for (var n in _oneTimers) {
-                  if (_oneTimers.hasOwnProperty(n)) {
-                    var v = _oneTimers[n];
-                    v[0](v[1]);
-                    delete _oneTimers[n];
-                  }
-                }
-
-                for (var n in _everies) {
-                  if (_everies.hasOwnProperty(n)) {
-                    var v = _everies[n];
-                    if (v.nextTime < ms) {
-                      if (v.remove) {
-                        if (v.nextTime > 0) {
-                          v.fn();
-                          delete _everies[n];
-                        } else {
-                          v.nextTime = ms + v.step;
-                        }
-                      } else {
-                        v.fn();
-                        v.nextTime = ms + v.step;
-                      }
-                    }
-                    if (v.until) {
-                      if (v.until < ms) {
-                        delete _everies[n];
-                      }
-                    }
-                  }
-                }
-
-                frame(_callQueQue);
-                lastMs = ms;
-              };
-              _callQueQue();
-              _initDone = true;
-            }
-          });
-
-          /**
-           * @param  key
-           * @param float fn
-           * @param float value
-           */
-          _myTrait_.once = function (key, fn, value) {
-            // _oneTimers
-
-            _oneTimers[key] = [fn, value];
-          };
-
-          /**
-           * @param function fn
-           */
-          _myTrait_.onFrame = function (fn) {
-
-            _framers.push(fn);
-          };
-
-          /**
-           * @param float t
-           */
-          _myTrait_.polyfill = function (t) {};
-
-          /**
-           * @param float fn
-           */
-          _myTrait_.removeFrameFn = function (fn) {
-
-            var i = _framers.indexOf(fn);
-            if (i >= 0) {
-              if (fn._onRemove) {
-                fn._onRemove();
-              }
-              _framers.splice(i, 1);
-              return true;
-            } else {
-              return false;
-            }
-          };
-        })(this);
-      };
-
-      var later = function later(a, b, c, d, e, f, g, h) {
-        var m = this,
-            res;
-        if (m instanceof later) {
-          var args = [a, b, c, d, e, f, g, h];
-          if (m.__factoryClass) {
-            m.__factoryClass.forEach(function (initF) {
-              res = initF.apply(m, args);
-            });
-            if (typeof res == 'function') {
-              if (res._classInfo.name != later._classInfo.name) return new res(a, b, c, d, e, f, g, h);
-            } else {
-              if (res) return res;
-            }
-          }
-          if (m.__traitInit) {
-            m.__traitInit.forEach(function (initF) {
-              initF.apply(m, args);
-            });
-          } else {
-            if (typeof m.init == 'function') m.init.apply(m, args);
-          }
-        } else return new later(a, b, c, d, e, f, g, h);
-      };
-      // inheritance is here
-
-      later._classInfo = {
-        name: 'later'
-      };
-      later.prototype = new later_prototype();
 
       (function (_myTrait_) {
 
@@ -328,7 +301,7 @@
                   allPromise.reject(v);
                 });
               } else {
-                allPromise.reject('Not list of promises');
+                allPromise.reject("Not list of promises");
               }
             });
 
@@ -377,7 +350,7 @@
                   allPromise.reject(v);
                 });
               } else {
-                allPromise.reject('Not list of promises');
+                allPromise.reject("Not list of promises");
               }
             });
 
@@ -415,7 +388,7 @@
               try {
                 var x = p._onFulfill(withValue);
                 // console.log("Returned ",x);
-                if (typeof x != 'undefined') {
+                if (typeof x != "undefined") {
                   p.resolve(x);
                 } else {
                   p.fulfill(withValue);
@@ -441,7 +414,7 @@
           this.triggerStateChange();
         };
 
-        if (_myTrait_.__traitInit && !_myTrait_.hasOwnProperty('__traitInit')) _myTrait_.__traitInit = _myTrait_.__traitInit.slice();
+        if (_myTrait_.__traitInit && !_myTrait_.hasOwnProperty("__traitInit")) _myTrait_.__traitInit = _myTrait_.__traitInit.slice();
         if (!_myTrait_.__traitInit) _myTrait_.__traitInit = [];
         _myTrait_.__traitInit.push(function (onFulfilled, onRejected) {
           // 0 = pending
@@ -568,7 +541,7 @@
 
           if (x == this) {
             // error
-            this._rejectReason = 'TypeError';
+            this._rejectReason = "TypeError";
             this.reject(this._rejectReason);
             return;
           }
@@ -636,7 +609,7 @@
          * @param float newState
          */
         _myTrait_.state = function (newState) {
-          if (typeof newState != 'undefined') {
+          if (typeof newState != "undefined") {
             this._state = newState;
           }
           return this._state;
@@ -684,7 +657,7 @@
          * @param float v
          */
         _myTrait_.value = function (v) {
-          if (typeof v != 'undefined') {
+          if (typeof v != "undefined") {
             this._stateValue = v;
             return this;
           }
@@ -702,7 +675,7 @@
           m.__factoryClass.forEach(function (initF) {
             res = initF.apply(m, args);
           });
-          if (typeof res == 'function') {
+          if (typeof res == "function") {
             if (res._classInfo.name != _promise._classInfo.name) return new res(a, b, c, d, e, f, g, h);
           } else {
             if (res) return res;
@@ -713,231 +686,16 @@
             initF.apply(m, args);
           });
         } else {
-          if (typeof m.init == 'function') m.init.apply(m, args);
+          if (typeof m.init == "function") m.init.apply(m, args);
         }
       } else return new _promise(a, b, c, d, e, f, g, h);
     };
     // inheritance is here
 
     _promise._classInfo = {
-      name: '_promise'
+      name: "_promise"
     };
     _promise.prototype = new _promise_prototype();
-
-    // the subclass definition comes around here then
-
-    // The class definition is here...
-    var later_prototype = function later_prototype() {
-      // Then create the traits and subclasses for this class here...
-
-      (function (_myTrait_) {
-        var _initDone;
-        var _callers;
-        var _oneTimers;
-        var _everies;
-        var _framers;
-
-        // Initialize static variables here...
-
-        /**
-         * @param function fn
-         * @param float thisObj
-         * @param float args
-         */
-        _myTrait_.add = function (fn, thisObj, args) {
-          if (thisObj || args) {
-            var tArgs;
-            if (Object.prototype.toString.call(args) === '[object Array]') {
-              tArgs = args;
-            } else {
-              tArgs = Array.prototype.slice.call(arguments, 2);
-              if (!tArgs) tArgs = [];
-            }
-            _callers.push([thisObj, fn, tArgs]);
-          } else {
-            _callers.push(fn);
-          }
-        };
-
-        /**
-         * @param function fn
-         */
-        _myTrait_.asap = function (fn) {
-          this.add(fn);
-        };
-
-        /**
-         * @param float seconds
-         * @param float fn
-         * @param float name
-         */
-        _myTrait_.every = function (seconds, fn, name) {
-
-          if (!name) {
-            name = 'time' + new Date().getTime() + Math.random(10000000);
-          }
-
-          _everies[name] = {
-            step: Math.floor(seconds * 1000),
-            fn: fn,
-            nextTime: 0
-          };
-        };
-
-        if (_myTrait_.__traitInit && !_myTrait_.hasOwnProperty('__traitInit')) _myTrait_.__traitInit = _myTrait_.__traitInit.slice();
-        if (!_myTrait_.__traitInit) _myTrait_.__traitInit = [];
-        _myTrait_.__traitInit.push(function (interval, fn) {
-          if (!_initDone) {
-
-            var frame, cancelFrame;
-
-            this.polyfill();
-
-            if (typeof window != 'undefined') {
-              var frame = window['requestAnimationFrame'],
-                  cancelFrame = window['cancelRequestAnimationFrame'];
-              ['', 'ms', 'moz', 'webkit', 'o'].forEach(function (x) {
-                if (!frame) {
-                  frame = window[x + 'RequestAnimationFrame'];
-                  cancelFrame = window[x + 'CancelAnimationFrame'] || window[x + 'CancelRequestAnimationFrame'];
-                }
-              });
-            }
-
-            if (!frame) frame = function (cb) {
-              return setTimeout(cb, 16);
-            };
-
-            if (!cancelFrame) cancelFrame = function (id) {
-              clearTimeout(id);
-            };
-
-            _callers = [];
-            _oneTimers = {};
-            _everies = {};
-            _framers = [];
-            var lastMs = 0;
-
-            var _callQueQue = function _callQueQue() {
-              var ms = new Date().getTime();
-              var fn;
-              while (fn = _callers.shift()) {
-                if (Object.prototype.toString.call(fn) === '[object Array]') {
-                  fn[1].apply(fn[0], fn[2]);
-                } else {
-                  fn();
-                }
-              }
-
-              for (var i = 0; i < _framers.length; i++) {
-                var fFn = _framers[i];
-                fFn();
-              }
-
-              for (var n in _oneTimers) {
-                if (_oneTimers.hasOwnProperty(n)) {
-                  var v = _oneTimers[n];
-                  v[0](v[1]);
-                  delete _oneTimers[n];
-                }
-              }
-
-              for (var n in _everies) {
-                if (_everies.hasOwnProperty(n)) {
-                  var v = _everies[n];
-                  if (v.nextTime < ms) {
-                    v.fn();
-                    v.nextTime = ms + v.step;
-                  }
-                  if (v.until) {
-                    if (v.until < ms) {
-                      delete _everies[n];
-                    }
-                  }
-                }
-              }
-
-              frame(_callQueQue);
-              lastMs = ms;
-            };
-            _callQueQue();
-            _initDone = true;
-          }
-        });
-
-        /**
-         * @param  key
-         * @param float fn
-         * @param float value
-         */
-        _myTrait_.once = function (key, fn, value) {
-          // _oneTimers
-
-          _oneTimers[key] = [fn, value];
-        };
-
-        /**
-         * @param function fn
-         */
-        _myTrait_.onFrame = function (fn) {
-
-          _framers.push(fn);
-        };
-
-        /**
-         * @param float t
-         */
-        _myTrait_.polyfill = function (t) {};
-
-        /**
-         * @param float fn
-         */
-        _myTrait_.removeFrameFn = function (fn) {
-
-          var i = _framers.indexOf(fn);
-          if (i >= 0) {
-            if (fn._onRemove) {
-              fn._onRemove();
-            }
-            _framers.splice(i, 1);
-            return true;
-          } else {
-            return false;
-          }
-        };
-      })(this);
-    };
-
-    var later = function later(a, b, c, d, e, f, g, h) {
-      var m = this,
-          res;
-      if (m instanceof later) {
-        var args = [a, b, c, d, e, f, g, h];
-        if (m.__factoryClass) {
-          m.__factoryClass.forEach(function (initF) {
-            res = initF.apply(m, args);
-          });
-          if (typeof res == 'function') {
-            if (res._classInfo.name != later._classInfo.name) return new res(a, b, c, d, e, f, g, h);
-          } else {
-            if (res) return res;
-          }
-        }
-        if (m.__traitInit) {
-          m.__traitInit.forEach(function (initF) {
-            initF.apply(m, args);
-          });
-        } else {
-          if (typeof m.init == 'function') m.init.apply(m, args);
-        }
-      } else return new later(a, b, c, d, e, f, g, h);
-    };
-    // inheritance is here
-
-    later._classInfo = {
-      name: 'later'
-    };
-    later.prototype = new later_prototype();
 
     // the subclass definition comes around here then
 
@@ -963,14 +721,14 @@
          * @param float t
          */
         _myTrait_.isArray = function (t) {
-          return Object.prototype.toString.call(t) === '[object Array]';
+          return Object.prototype.toString.call(t) === "[object Array]";
         };
 
         /**
          * @param float fn
          */
         _myTrait_.isFunction = function (fn) {
-          return Object.prototype.toString.call(fn) == '[object Function]';
+          return Object.prototype.toString.call(fn) == "[object Function]";
         };
 
         /**
@@ -987,7 +745,7 @@
 
         // Initialize static variables here...
 
-        if (!_myTrait_.hasOwnProperty('__factoryClass')) _myTrait_.__factoryClass = [];
+        if (!_myTrait_.hasOwnProperty("__factoryClass")) _myTrait_.__factoryClass = [];
         _myTrait_.__factoryClass.push(function (id, manual) {
 
           if (id === false && manual) return;
@@ -1024,7 +782,7 @@
           });
         };
 
-        if (_myTrait_.__traitInit && !_myTrait_.hasOwnProperty('__traitInit')) _myTrait_.__traitInit = _myTrait_.__traitInit.slice();
+        if (_myTrait_.__traitInit && !_myTrait_.hasOwnProperty("__traitInit")) _myTrait_.__traitInit = _myTrait_.__traitInit.slice();
         if (!_myTrait_.__traitInit) _myTrait_.__traitInit = [];
         _myTrait_.__traitInit.push(function (myId, manual) {
 
@@ -1108,7 +866,7 @@
           m.__factoryClass.forEach(function (initF) {
             res = initF.apply(m, args);
           });
-          if (typeof res == 'function') {
+          if (typeof res == "function") {
             if (res._classInfo.name != sequenceStepper._classInfo.name) return new res(a, b, c, d, e, f, g, h);
           } else {
             if (res) return res;
@@ -1119,14 +877,14 @@
             initF.apply(m, args);
           });
         } else {
-          if (typeof m.init == 'function') m.init.apply(m, args);
+          if (typeof m.init == "function") m.init.apply(m, args);
         }
       } else return new sequenceStepper(a, b, c, d, e, f, g, h);
     };
     // inheritance is here
 
     sequenceStepper._classInfo = {
-      name: 'sequenceStepper'
+      name: "sequenceStepper"
     };
     sequenceStepper.prototype = new sequenceStepper_prototype();
 
@@ -1136,44 +894,6 @@
     var _serverChannelMgr_prototype = function _serverChannelMgr_prototype() {
       // Then create the traits and subclasses for this class here...
 
-      // trait comes here...
-
-      (function (_myTrait_) {
-
-        // Initialize static variables here...
-
-        /**
-         * Binds event name to event function
-         * @param string en  - Event name
-         * @param float ef
-         */
-        _myTrait_.on = function (en, ef) {
-          if (!this._ev) this._ev = {};
-          if (!this._ev[en]) this._ev[en] = [];
-
-          this._ev[en].push(ef);
-
-          return this;
-        };
-
-        /**
-         * triggers event with data and optional function
-         * @param string en
-         * @param float data
-         * @param float fn
-         */
-        _myTrait_.trigger = function (en, data, fn) {
-
-          if (!this._ev) return;
-          if (!this._ev[en]) return;
-          var me = this;
-          this._ev[en].forEach(function (cb) {
-            cb(data, fn);
-          });
-          return this;
-        };
-      })(this);
-
       (function (_myTrait_) {
         var _channelIndex;
         var _rootData;
@@ -1182,7 +902,7 @@
 
         // Initialize static variables here...
 
-        if (_myTrait_.__traitInit && !_myTrait_.hasOwnProperty('__traitInit')) _myTrait_.__traitInit = _myTrait_.__traitInit.slice();
+        if (_myTrait_.__traitInit && !_myTrait_.hasOwnProperty("__traitInit")) _myTrait_.__traitInit = _myTrait_.__traitInit.slice();
         if (!_myTrait_.__traitInit) _myTrait_.__traitInit = [];
         _myTrait_.__traitInit.push(function (serverSocket, fileSystem) {
 
@@ -1190,34 +910,34 @@
 
           // The server which manages the client connections is here..
 
-          this._server.on('connect', function (socket) {
+          this._server.on("connect", function (socket) {
 
             // TODO: add authentication here...
 
             // Here is simple example of the requestChannel...
-            socket.on('requestChannel', function (cData, responseFn) {
+            socket.on("requestChannel", function (cData, responseFn) {
               socket.join(cData.channelId);
               responseFn({
                 success: true,
                 channelId: cData.channelId
               });
             });
-            socket.on('auth', function (cData, responseFn) {
-              socket.setAuthInfo(cData.userId, ['users']);
+            socket.on("auth", function (cData, responseFn) {
+              socket.setAuthInfo(cData.userId, ["users"]);
               responseFn({
                 success: true,
                 userId: socket.getUserId()
               });
             });
-            socket.on('authenticate', function (cData, responseFn) {
-              socket.setAuthInfo(cData.userId, ['users']);
+            socket.on("authenticate", function (cData, responseFn) {
+              socket.setAuthInfo(cData.userId, ["users"]);
               responseFn({
                 success: true,
                 userId: socket.getUserId()
               });
             });
 
-            socket.on('whoami', function (cData, responseFn) {
+            socket.on("whoami", function (cData, responseFn) {
               responseFn({
                 success: true,
                 userId: socket.getUserId()
@@ -1225,12 +945,12 @@
             });
 
             // messages to the channel from the socket
-            socket.on('channelCommand', function (cmd, responseFn) {
+            socket.on("channelCommand", function (cmd, responseFn) {
 
               if (!socket.getUserId()) {
                 responseFn({
                   success: false,
-                  reason: 'socket is not authenticated.'
+                  reason: "socket is not authenticated."
                 });
                 return;
               }
@@ -1238,7 +958,7 @@
               if (!socket.isInRoom(cmd.channelId)) {
                 responseFn({
                   success: false,
-                  reason: 'not in room'
+                  reason: "not in room"
                 });
                 return;
               }
@@ -1273,7 +993,7 @@
           m.__factoryClass.forEach(function (initF) {
             res = initF.apply(m, args);
           });
-          if (typeof res == 'function') {
+          if (typeof res == "function") {
             if (res._classInfo.name != _serverChannelMgr._classInfo.name) return new res(a, b, c, d, e, f, g, h);
           } else {
             if (res) return res;
@@ -1284,27 +1004,27 @@
             initF.apply(m, args);
           });
         } else {
-          if (typeof m.init == 'function') m.init.apply(m, args);
+          if (typeof m.init == "function") m.init.apply(m, args);
         }
       } else return new _serverChannelMgr(a, b, c, d, e, f, g, h);
     };
     // inheritance is here
 
     _serverChannelMgr._classInfo = {
-      name: '_serverChannelMgr'
+      name: "_serverChannelMgr"
     };
     _serverChannelMgr.prototype = new _serverChannelMgr_prototype();
 
     (function () {
-      if (typeof define !== 'undefined' && define !== null && define.amd != null) {
-        __amdDefs__['_serverChannelMgr'] = _serverChannelMgr;
+      if (typeof define !== "undefined" && define !== null && define.amd != null) {
+        __amdDefs__["_serverChannelMgr"] = _serverChannelMgr;
         this._serverChannelMgr = _serverChannelMgr;
-      } else if (typeof module !== 'undefined' && module !== null && module.exports != null) {
-        module.exports['_serverChannelMgr'] = _serverChannelMgr;
+      } else if (typeof module !== "undefined" && module !== null && module.exports != null) {
+        module.exports["_serverChannelMgr"] = _serverChannelMgr;
       } else {
         this._serverChannelMgr = _serverChannelMgr;
       }
-    }).call(new Function('return this')());
+    }).call(new Function("return this")());
 
     // the subclass definition comes around here then
 
@@ -1312,50 +1032,12 @@
     var _localChannelModel_prototype = function _localChannelModel_prototype() {
       // Then create the traits and subclasses for this class here...
 
-      // trait comes here...
-
-      (function (_myTrait_) {
-
-        // Initialize static variables here...
-
-        /**
-         * Binds event name to event function
-         * @param string en  - Event name
-         * @param float ef
-         */
-        _myTrait_.on = function (en, ef) {
-          if (!this._ev) this._ev = {};
-          if (!this._ev[en]) this._ev[en] = [];
-
-          this._ev[en].push(ef);
-
-          return this;
-        };
-
-        /**
-         * triggers event with data and optional function
-         * @param string en
-         * @param float data
-         * @param float fn
-         */
-        _myTrait_.trigger = function (en, data, fn) {
-
-          if (!this._ev) return;
-          if (!this._ev[en]) return;
-          var me = this;
-          this._ev[en].forEach(function (cb) {
-            cb(data, fn);
-          });
-          return this;
-        };
-      })(this);
-
       (function (_myTrait_) {
         var _instances;
 
         // Initialize static variables here...
 
-        if (!_myTrait_.hasOwnProperty('__factoryClass')) _myTrait_.__factoryClass = [];
+        if (!_myTrait_.hasOwnProperty("__factoryClass")) _myTrait_.__factoryClass = [];
         _myTrait_.__factoryClass.push(function (id) {
 
           if (!_instances) {
@@ -1376,9 +1058,9 @@
         _myTrait_._createChannelDir = function (channelId) {
 
           var str = channelId;
-          if (str.charAt(0) == '/') str = str.substring(1);
+          if (str.charAt(0) == "/") str = str.substring(1);
 
-          var parts = str.split('/');
+          var parts = str.split("/");
           var fs = this._fs,
               activeFolder = fs;
 
@@ -1433,12 +1115,12 @@
           var me = this;
           return _promise(function (result) {
             var bIsNew = false;
-            folder.isFile('ch.settings').then(function (is_file) {
+            folder.isFile("ch.settings").then(function (is_file) {
               if (!is_file) {
                 bIsNew = true;
-                return folder.writeFile('ch.settings', JSON.stringify({
+                return folder.writeFile("ch.settings", JSON.stringify({
                   version: 1,
-                  name: 'Initial version',
+                  name: "Initial version",
                   utc: new Date().getTime(),
                   channelId: me._channelId,
                   journalLine: 0
@@ -1446,7 +1128,7 @@
               }
               return true;
             }).then(function () {
-              return folder.readFile('ch.settings');
+              return folder.readFile("ch.settings");
             }).then(function (jsonData) {
               var data = JSON.parse(jsonData);
               me._settings = data;
@@ -1459,7 +1141,7 @@
          * @param float str
          */
         _myTrait_._textLinesToArray = function (str) {
-          var a = str.split('\n');
+          var a = str.split("\n");
           var res = [];
           a.forEach(function (line) {
             if (line.trim().length == 0) return;
@@ -1472,7 +1154,7 @@
          * @param float t
          */
         _myTrait_._writeSettings = function (t) {
-          return this._folder.writeFile('ch.settings', JSON.stringify(this._settings));
+          return this._folder.writeFile("ch.settings", JSON.stringify(this._settings));
         };
 
         /**
@@ -1536,7 +1218,7 @@
               name: forkData.name,
               utc: new Date().getTime()
             };
-            local.appendFile('forks', JSON.stringify(obj) + '\n').then(function () {
+            local.appendFile("forks", JSON.stringify(obj) + "\n").then(function () {
               var newChann = _localChannelModel(forkData.channelId, me._fs);
               newChann.then(function () {
                 return newChann.set(obj);
@@ -1555,7 +1237,7 @@
               me = this;
           return _promise(function (response) {
             me.then(function () {
-              var settings = local.table('settings');
+              var settings = local.table("settings");
               settings.get(name).then(function (v) {
                 response(v.value);
               });
@@ -1583,7 +1265,7 @@
           return _promise(function (result) {
 
             me.then(function () {
-              return local.readFile('forks');
+              return local.readFile("forks");
             }).then(function (res) {
               if (res) {
                 result(me._textLinesToArray(res));
@@ -1617,7 +1299,7 @@
           });
         };
 
-        if (_myTrait_.__traitInit && !_myTrait_.hasOwnProperty('__traitInit')) _myTrait_.__traitInit = _myTrait_.__traitInit.slice();
+        if (_myTrait_.__traitInit && !_myTrait_.hasOwnProperty("__traitInit")) _myTrait_.__traitInit = _myTrait_.__traitInit.slice();
         if (!_myTrait_.__traitInit) _myTrait_.__traitInit = [];
         _myTrait_.__traitInit.push(function (channelId, fileSystem) {
 
@@ -1709,7 +1391,7 @@
               versionNumber = version || me._settings.version;
 
           return _promise(function (res) {
-            local.readFile('journal.' + versionNumber).then(function (data) {
+            local.readFile("journal." + versionNumber).then(function (data) {
               if (!data) {
                 res([]);
                 return;
@@ -1737,7 +1419,7 @@
             });
           }
 
-          return local.readFile('file.' + versionNumber);
+          return local.readFile("file." + versionNumber);
         };
 
         /**
@@ -1832,9 +1514,9 @@
               me = this,
               versionNumber = version || me._settings.version;
 
-          if (typeof data != 'string') data = JSON.stringify(data);
+          if (typeof data != "string") data = JSON.stringify(data);
 
-          return local.writeFile('file.' + versionNumber, data);
+          return local.writeFile("file." + versionNumber, data);
         };
 
         /**
@@ -1846,7 +1528,7 @@
               me = this;
 
           return _promise(function (resp) {
-            local.appendFile('journal.' + me._settings.version, JSON.stringify(row) + '\n').then(function () {
+            local.appendFile("journal." + me._settings.version, JSON.stringify(row) + "\n").then(function () {
               me._settings.journalLine++;
               me._writeSettings();
               resp(true);
@@ -1865,7 +1547,7 @@
           m.__factoryClass.forEach(function (initF) {
             res = initF.apply(m, args);
           });
-          if (typeof res == 'function') {
+          if (typeof res == "function") {
             if (res._classInfo.name != _localChannelModel._classInfo.name) return new res(a, b, c, d, e, f, g, h);
           } else {
             if (res) return res;
@@ -1876,7 +1558,7 @@
             initF.apply(m, args);
           });
         } else {
-          if (typeof m.init == 'function') m.init.apply(m, args);
+          if (typeof m.init == "function") m.init.apply(m, args);
         }
       } else return new _localChannelModel(a, b, c, d, e, f, g, h);
     };
@@ -1885,20 +1567,20 @@
     _localChannelModel_prototype.prototype = _promise.prototype;
 
     _localChannelModel._classInfo = {
-      name: '_localChannelModel'
+      name: "_localChannelModel"
     };
     _localChannelModel.prototype = new _localChannelModel_prototype();
 
     (function () {
-      if (typeof define !== 'undefined' && define !== null && define.amd != null) {
-        __amdDefs__['_localChannelModel'] = _localChannelModel;
+      if (typeof define !== "undefined" && define !== null && define.amd != null) {
+        __amdDefs__["_localChannelModel"] = _localChannelModel;
         this._localChannelModel = _localChannelModel;
-      } else if (typeof module !== 'undefined' && module !== null && module.exports != null) {
-        module.exports['_localChannelModel'] = _localChannelModel;
+      } else if (typeof module !== "undefined" && module !== null && module.exports != null) {
+        module.exports["_localChannelModel"] = _localChannelModel;
       } else {
         this._localChannelModel = _localChannelModel;
       }
-    }).call(new Function('return this')());
+    }).call(new Function("return this")());
 
     // the subclass definition comes around here then
 
@@ -1906,51 +1588,13 @@
     var _channelController_prototype = function _channelController_prototype() {
       // Then create the traits and subclasses for this class here...
 
-      // trait comes here...
-
-      (function (_myTrait_) {
-
-        // Initialize static variables here...
-
-        /**
-         * Binds event name to event function
-         * @param string en  - Event name
-         * @param float ef
-         */
-        _myTrait_.on = function (en, ef) {
-          if (!this._ev) this._ev = {};
-          if (!this._ev[en]) this._ev[en] = [];
-
-          this._ev[en].push(ef);
-
-          return this;
-        };
-
-        /**
-         * triggers event with data and optional function
-         * @param string en
-         * @param float data
-         * @param float fn
-         */
-        _myTrait_.trigger = function (en, data, fn) {
-
-          if (!this._ev) return;
-          if (!this._ev[en]) return;
-          var me = this;
-          this._ev[en].forEach(function (cb) {
-            cb(data, fn);
-          });
-          return this;
-        };
-      })(this);
-
       (function (_myTrait_) {
         var _instances;
         var _cmds;
 
         // Initialize static variables here...
 
-        if (!_myTrait_.hasOwnProperty('__factoryClass')) _myTrait_.__factoryClass = [];
+        if (!_myTrait_.hasOwnProperty("__factoryClass")) _myTrait_.__factoryClass = [];
         _myTrait_.__factoryClass.push(function (id, manual) {
           if (id === false && manual) return;
 
@@ -2022,7 +1666,7 @@
               });
             },
             writeMain: function writeMain(cmd, result) {
-              me._model.writeFile('main', cmd.data).then(function (r) {
+              me._model.writeFile("main", cmd.data).then(function (r) {
                 result({
                   ok: true
                 });
@@ -2040,7 +1684,7 @@
             },
             writeJournal: function writeJournal(cmd, result, socket) {
               me._model.writeToJournal(cmd.data).then(function (r) {
-                socket.broadcast.to(cmd.channelId).emit('ch_' + cmd.channelId, cmd);
+                socket.broadcast.to(cmd.channelId).emit("ch_" + cmd.channelId, cmd);
                 result({
                   ok: true
                 });
@@ -2059,7 +1703,7 @@
           };
         };
 
-        if (_myTrait_.__traitInit && !_myTrait_.hasOwnProperty('__traitInit')) _myTrait_.__traitInit = _myTrait_.__traitInit.slice();
+        if (_myTrait_.__traitInit && !_myTrait_.hasOwnProperty("__traitInit")) _myTrait_.__traitInit = _myTrait_.__traitInit.slice();
         if (!_myTrait_.__traitInit) _myTrait_.__traitInit = [];
         _myTrait_.__traitInit.push(function (channelId, fileSystem) {
 
@@ -2102,7 +1746,7 @@
           m.__factoryClass.forEach(function (initF) {
             res = initF.apply(m, args);
           });
-          if (typeof res == 'function') {
+          if (typeof res == "function") {
             if (res._classInfo.name != _channelController._classInfo.name) return new res(a, b, c, d, e, f, g, h);
           } else {
             if (res) return res;
@@ -2113,33 +1757,33 @@
             initF.apply(m, args);
           });
         } else {
-          if (typeof m.init == 'function') m.init.apply(m, args);
+          if (typeof m.init == "function") m.init.apply(m, args);
         }
       } else return new _channelController(a, b, c, d, e, f, g, h);
     };
     // inheritance is here
 
     _channelController._classInfo = {
-      name: '_channelController'
+      name: "_channelController"
     };
     _channelController.prototype = new _channelController_prototype();
 
     (function () {
-      if (typeof define !== 'undefined' && define !== null && define.amd != null) {
-        __amdDefs__['_channelController'] = _channelController;
+      if (typeof define !== "undefined" && define !== null && define.amd != null) {
+        __amdDefs__["_channelController"] = _channelController;
         this._channelController = _channelController;
-      } else if (typeof module !== 'undefined' && module !== null && module.exports != null) {
-        module.exports['_channelController'] = _channelController;
+      } else if (typeof module !== "undefined" && module !== null && module.exports != null) {
+        module.exports["_channelController"] = _channelController;
       } else {
         this._channelController = _channelController;
       }
-    }).call(new Function('return this')());
+    }).call(new Function("return this")());
 
     (function (_myTrait_) {
 
       // Initialize static variables here...
 
-      if (_myTrait_.__traitInit && !_myTrait_.hasOwnProperty('__traitInit')) _myTrait_.__traitInit = _myTrait_.__traitInit.slice();
+      if (_myTrait_.__traitInit && !_myTrait_.hasOwnProperty("__traitInit")) _myTrait_.__traitInit = _myTrait_.__traitInit.slice();
       if (!_myTrait_.__traitInit) _myTrait_.__traitInit = [];
       _myTrait_.__traitInit.push(function (host) {});
     })(this);
@@ -2154,7 +1798,7 @@
         m.__factoryClass.forEach(function (initF) {
           res = initF.apply(m, args);
         });
-        if (typeof res == 'function') {
+        if (typeof res == "function") {
           if (res._classInfo.name != _channels._classInfo.name) return new res(a, b, c, d, e, f, g, h);
         } else {
           if (res) return res;
@@ -2165,22 +1809,20 @@
           initF.apply(m, args);
         });
       } else {
-        if (typeof m.init == 'function') m.init.apply(m, args);
+        if (typeof m.init == "function") m.init.apply(m, args);
       }
     } else return new _channels(a, b, c, d, e, f, g, h);
   };
   // inheritance is here
 
   _channels._classInfo = {
-    name: '_channels'
+    name: "_channels"
   };
   _channels.prototype = new _channels_prototype();
 
-  if (typeof define !== 'undefined' && define !== null && define.amd != null) {
+  if (typeof define !== "undefined" && define !== null && define.amd != null) {
     define(__amdDefs__);
   }
-}).call(new Function('return this')());
-
-// --- let's not ---
+}).call(new Function("return this")());
 
 // --- let's not ---

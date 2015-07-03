@@ -231,6 +231,30 @@ Current for documentation see source code of _localChannelModel or _channelContr
    
       
             
+#### Class later
+
+
+- [add](README.md#later_add)
+- [asap](README.md#later_asap)
+- [every](README.md#later_every)
+- [once](README.md#later_once)
+- [onFrame](README.md#later_onFrame)
+- [polyfill](README.md#later_polyfill)
+- [removeFrameFn](README.md#later_removeFrameFn)
+
+
+
+   
+
+
+   
+
+
+
+      
+    
+      
+            
 #### Class _promise
 
 
@@ -263,62 +287,11 @@ Current for documentation see source code of _localChannelModel or _channelContr
 
     
     
-    
-    
 
 
    
       
     
-      
-            
-#### Class later
-
-
-- [add](README.md#later_add)
-- [after](README.md#later_after)
-- [asap](README.md#later_asap)
-- [every](README.md#later_every)
-- [once](README.md#later_once)
-- [onFrame](README.md#later_onFrame)
-- [polyfill](README.md#later_polyfill)
-- [removeFrameFn](README.md#later_removeFrameFn)
-
-
-
-   
-
-
-   
-
-
-
-      
-    
-
-
-
-      
-    
-      
-            
-#### Class later
-
-
-- [add](README.md#later_add)
-- [asap](README.md#later_asap)
-- [every](README.md#later_every)
-- [once](README.md#later_once)
-- [onFrame](README.md#later_onFrame)
-- [polyfill](README.md#later_polyfill)
-- [removeFrameFn](README.md#later_removeFrameFn)
-
-
-
-   
-
-
-   
 
 
 
@@ -366,20 +339,9 @@ Current for documentation see source code of _localChannelModel or _channelContr
 
 
    
-    
-##### trait events
-
-- [on](README.md#_on)
-- [trigger](README.md#_trigger)
-
-
-    
-    
 
 
    
-      
-    
 
 
 
@@ -414,20 +376,9 @@ Current for documentation see source code of _localChannelModel or _channelContr
 
 
    
-    
-##### trait events
-
-- [on](README.md#_on)
-- [trigger](README.md#_trigger)
-
-
-    
-    
 
 
    
-      
-    
 
 
 
@@ -445,20 +396,9 @@ Current for documentation see source code of _localChannelModel or _channelContr
 
 
    
-    
-##### trait events
-
-- [on](README.md#_on)
-- [trigger](README.md#_trigger)
-
-
-    
-    
 
 
    
-      
-    
 
 
 
@@ -500,6 +440,203 @@ The class has following internal singleton variables:
 
 
    
+      
+            
+# Class later
+
+
+The class has following internal singleton variables:
+        
+* _initDone
+        
+* _callers
+        
+* _oneTimers
+        
+* _everies
+        
+* _framers
+        
+        
+### <a name="later_add"></a>later::add(fn, thisObj, args)
+
+
+```javascript
+if(thisObj || args) {
+   var tArgs;
+   if( Object.prototype.toString.call( args ) === '[object Array]' ) {
+       tArgs = args;
+   } else {
+       tArgs = Array.prototype.slice.call(arguments, 2);
+       if(!tArgs) tArgs = [];
+   }
+   _callers.push([thisObj, fn, tArgs]);   
+} else {
+    _callers.push(fn);
+}
+```
+
+### <a name="later_asap"></a>later::asap(fn)
+
+
+```javascript
+this.add(fn);
+
+```
+
+### <a name="later_every"></a>later::every(seconds, fn, name)
+
+
+```javascript
+
+if(!name) {
+    name = "time"+(new Date()).getTime()+Math.random(10000000);
+}
+
+_everies[name] = {
+    step : Math.floor(seconds * 1000),
+    fn : fn,
+    nextTime : 0
+};
+```
+
+### later::constructor( interval, fn )
+
+```javascript
+if(!_initDone) {
+
+   var frame, cancelFrame;
+   
+   this.polyfill();
+ 
+   if(typeof(window) != "undefined") {
+       var frame = window['requestAnimationFrame'], 
+           cancelFrame= window['cancelRequestAnimationFrame'];
+       ['', 'ms', 'moz', 'webkit', 'o'].forEach( function(x) { 
+           if(!frame) {
+            frame = window[x+'RequestAnimationFrame'];
+            cancelFrame = window[x+'CancelAnimationFrame'] 
+                                       || window[x+'CancelRequestAnimationFrame'];
+           }
+        });
+   }
+ 
+    if (!frame)
+        frame= function(cb) {
+            return setTimeout(cb, 16);
+        };
+ 
+    if (!cancelFrame)
+        cancelFrame = function(id) {
+            clearTimeout(id);
+        };    
+        
+    _callers = [];
+    _oneTimers = {};
+    _everies = {};
+    _framers = [];
+    var lastMs = 0;
+    
+    var _callQueQue = function() {
+       var ms = (new Date()).getTime();
+       var fn;
+       while(fn=_callers.shift()) {
+          if(Object.prototype.toString.call( fn ) === '[object Array]' ) {
+              fn[1].apply(fn[0], fn[2]);
+          } else {
+              fn();
+          }
+           
+       }
+       
+       for(var i=0; i<_framers.length;i++) {
+           var fFn = _framers[i];
+           fFn();
+       }
+       
+       for(var n in _oneTimers) {
+           if(_oneTimers.hasOwnProperty(n)) {
+               var v = _oneTimers[n];
+               v[0](v[1]);
+               delete _oneTimers[n];
+           }
+       }
+       
+       for(var n in _everies) {
+           if(_everies.hasOwnProperty(n)) {
+               var v = _everies[n];
+               if(v.nextTime < ms) {
+                   v.fn();
+                   v.nextTime = ms + v.step;
+               }
+               if(v.until) {
+                   if(v.until < ms) {
+                       delete _everies[n];
+                   }
+               }
+           }
+       }       
+       
+       frame(_callQueQue);
+       lastMs = ms;
+    };
+    _callQueQue();
+    _initDone = true;
+}
+```
+        
+### <a name="later_once"></a>later::once(key, fn, value)
+
+
+```javascript
+// _oneTimers
+
+_oneTimers[key] = [fn,value];
+```
+
+### <a name="later_onFrame"></a>later::onFrame(fn)
+
+
+```javascript
+
+_framers.push(fn);
+```
+
+### <a name="later_polyfill"></a>later::polyfill(t)
+
+
+```javascript
+// --- let's not ---
+```
+
+### <a name="later_removeFrameFn"></a>later::removeFrameFn(fn)
+
+
+```javascript
+
+var i = _framers.indexOf(fn);
+if(i>=0) {
+    if(fn._onRemove) {
+        fn._onRemove();
+    }
+    _framers.splice(i,1);
+    return true;
+} else {
+    return false;
+}
+```
+
+
+
+   
+
+
+   
+
+
+
+      
+    
       
             
 # Class _promise
@@ -966,432 +1103,11 @@ return obj === Object(obj);
 
     
     
-    
-    
 
 
    
       
     
-      
-            
-# Class later
-
-
-The class has following internal singleton variables:
-        
-* _initDone
-        
-* _callers
-        
-* _oneTimers
-        
-* _everies
-        
-* _framers
-        
-        
-### <a name="later_add"></a>later::add(fn, thisObj, args)
-
-
-```javascript
-if(thisObj || args) {
-   var tArgs;
-   if( Object.prototype.toString.call( args ) === '[object Array]' ) {
-       tArgs = args;
-   } else {
-       tArgs = Array.prototype.slice.call(arguments, 2);
-       if(!tArgs) tArgs = [];
-   }
-   _callers.push([thisObj, fn, tArgs]);   
-} else {
-    _callers.push(fn);
-}
-```
-
-### <a name="later_after"></a>later::after(seconds, fn, name)
-
-
-```javascript
-
-if(!name) {
-    name = "time"+(new Date()).getTime()+Math.random(10000000);
-}
-
-_everies[name] = {
-    step : Math.floor(seconds * 1000),
-    fn : fn,
-    nextTime : 0,
-    remove : true
-};
-```
-
-### <a name="later_asap"></a>later::asap(fn)
-
-
-```javascript
-this.add(fn);
-
-```
-
-### <a name="later_every"></a>later::every(seconds, fn, name)
-
-
-```javascript
-
-if(!name) {
-    name = "time"+(new Date()).getTime()+Math.random(10000000);
-}
-
-_everies[name] = {
-    step : Math.floor(seconds * 1000),
-    fn : fn,
-    nextTime : 0
-};
-```
-
-### later::constructor( interval, fn )
-
-```javascript
-if(!_initDone) {
-    
-   this.polyfill();
- 
-   var frame, cancelFrame;
-   if(typeof(window) != "undefined") {
-       var frame = window['requestAnimationFrame'], 
-           cancelFrame= window['cancelRequestAnimationFrame'];
-       ['', 'ms', 'moz', 'webkit', 'o'].forEach( function(x) { 
-           if(!frame) {
-            frame = window[x+'RequestAnimationFrame'];
-            cancelFrame = window[x+'CancelAnimationFrame'] 
-                                       || window[x+'CancelRequestAnimationFrame'];
-           }
-        });
-   }
- 
-    if (!frame)
-        frame= function(cb) {
-            return setTimeout(cb, 16);
-        };
- 
-    if (!cancelFrame)
-        cancelFrame = function(id) {
-            clearTimeout(id);
-        };    
-        
-    _callers = [];
-    _oneTimers = {};
-    _everies = {};
-    _framers = [];
-    var lastMs = 0;
-    
-    var _callQueQue = function() {
-       var ms = (new Date()).getTime();
-       var fn;
-       while(fn=_callers.shift()) {
-          if(Object.prototype.toString.call( fn ) === '[object Array]' ) {
-              fn[1].apply(fn[0], fn[2]);
-          } else {
-              fn();
-          }
-           
-       }
-       
-       for(var i=0; i<_framers.length;i++) {
-           var fFn = _framers[i];
-           fFn();
-       }
-       
-       for(var n in _oneTimers) {
-           if(_oneTimers.hasOwnProperty(n)) {
-               var v = _oneTimers[n];
-               v[0](v[1]);
-               delete _oneTimers[n];
-           }
-       }
-       
-       for(var n in _everies) {
-           if(_everies.hasOwnProperty(n)) {
-               var v = _everies[n];
-               if(v.nextTime < ms) {
-                   if(v.remove) {
-                       if(v.nextTime > 0) {
-                          v.fn(); 
-                          delete _everies[n];
-                       } else {
-                          v.nextTime = ms + v.step; 
-                       }
-                   } else {
-                       v.fn();
-                       v.nextTime = ms + v.step;
-                   }
-               }
-               if(v.until) {
-                   if(v.until < ms) {
-                       delete _everies[n];
-                   }
-               }
-           }
-       }       
-       
-       frame(_callQueQue);
-       lastMs = ms;
-    };
-    _callQueQue();
-    _initDone = true;
-}
-```
-        
-### <a name="later_once"></a>later::once(key, fn, value)
-
-
-```javascript
-// _oneTimers
-
-_oneTimers[key] = [fn,value];
-```
-
-### <a name="later_onFrame"></a>later::onFrame(fn)
-
-
-```javascript
-
-_framers.push(fn);
-```
-
-### <a name="later_polyfill"></a>later::polyfill(t)
-
-
-```javascript
-// --- let's not ---
-```
-
-### <a name="later_removeFrameFn"></a>later::removeFrameFn(fn)
-
-
-```javascript
-
-var i = _framers.indexOf(fn);
-if(i>=0) {
-    if(fn._onRemove) {
-        fn._onRemove();
-    }
-    _framers.splice(i,1);
-    return true;
-} else {
-    return false;
-}
-```
-
-
-
-   
-
-
-   
-
-
-
-      
-    
-
-
-
-      
-    
-      
-            
-# Class later
-
-
-The class has following internal singleton variables:
-        
-* _initDone
-        
-* _callers
-        
-* _oneTimers
-        
-* _everies
-        
-* _framers
-        
-        
-### <a name="later_add"></a>later::add(fn, thisObj, args)
-
-
-```javascript
-if(thisObj || args) {
-   var tArgs;
-   if( Object.prototype.toString.call( args ) === '[object Array]' ) {
-       tArgs = args;
-   } else {
-       tArgs = Array.prototype.slice.call(arguments, 2);
-       if(!tArgs) tArgs = [];
-   }
-   _callers.push([thisObj, fn, tArgs]);   
-} else {
-    _callers.push(fn);
-}
-```
-
-### <a name="later_asap"></a>later::asap(fn)
-
-
-```javascript
-this.add(fn);
-
-```
-
-### <a name="later_every"></a>later::every(seconds, fn, name)
-
-
-```javascript
-
-if(!name) {
-    name = "time"+(new Date()).getTime()+Math.random(10000000);
-}
-
-_everies[name] = {
-    step : Math.floor(seconds * 1000),
-    fn : fn,
-    nextTime : 0
-};
-```
-
-### later::constructor( interval, fn )
-
-```javascript
-if(!_initDone) {
-
-   var frame, cancelFrame;
-   
-   this.polyfill();
- 
-   if(typeof(window) != "undefined") {
-       var frame = window['requestAnimationFrame'], 
-           cancelFrame= window['cancelRequestAnimationFrame'];
-       ['', 'ms', 'moz', 'webkit', 'o'].forEach( function(x) { 
-           if(!frame) {
-            frame = window[x+'RequestAnimationFrame'];
-            cancelFrame = window[x+'CancelAnimationFrame'] 
-                                       || window[x+'CancelRequestAnimationFrame'];
-           }
-        });
-   }
- 
-    if (!frame)
-        frame= function(cb) {
-            return setTimeout(cb, 16);
-        };
- 
-    if (!cancelFrame)
-        cancelFrame = function(id) {
-            clearTimeout(id);
-        };    
-        
-    _callers = [];
-    _oneTimers = {};
-    _everies = {};
-    _framers = [];
-    var lastMs = 0;
-    
-    var _callQueQue = function() {
-       var ms = (new Date()).getTime();
-       var fn;
-       while(fn=_callers.shift()) {
-          if(Object.prototype.toString.call( fn ) === '[object Array]' ) {
-              fn[1].apply(fn[0], fn[2]);
-          } else {
-              fn();
-          }
-           
-       }
-       
-       for(var i=0; i<_framers.length;i++) {
-           var fFn = _framers[i];
-           fFn();
-       }
-       
-       for(var n in _oneTimers) {
-           if(_oneTimers.hasOwnProperty(n)) {
-               var v = _oneTimers[n];
-               v[0](v[1]);
-               delete _oneTimers[n];
-           }
-       }
-       
-       for(var n in _everies) {
-           if(_everies.hasOwnProperty(n)) {
-               var v = _everies[n];
-               if(v.nextTime < ms) {
-                   v.fn();
-                   v.nextTime = ms + v.step;
-               }
-               if(v.until) {
-                   if(v.until < ms) {
-                       delete _everies[n];
-                   }
-               }
-           }
-       }       
-       
-       frame(_callQueQue);
-       lastMs = ms;
-    };
-    _callQueQue();
-    _initDone = true;
-}
-```
-        
-### <a name="later_once"></a>later::once(key, fn, value)
-
-
-```javascript
-// _oneTimers
-
-_oneTimers[key] = [fn,value];
-```
-
-### <a name="later_onFrame"></a>later::onFrame(fn)
-
-
-```javascript
-
-_framers.push(fn);
-```
-
-### <a name="later_polyfill"></a>later::polyfill(t)
-
-
-```javascript
-// --- let's not ---
-```
-
-### <a name="later_removeFrameFn"></a>later::removeFrameFn(fn)
-
-
-```javascript
-
-var i = _framers.indexOf(fn);
-if(i>=0) {
-    if(fn._onRemove) {
-        fn._onRemove();
-    }
-    _framers.splice(i,1);
-    return true;
-} else {
-    return false;
-}
-```
-
-
-
-   
-
-
-   
 
 
 
@@ -1659,46 +1375,9 @@ this._server.on("connect", function( socket ) {
 
 
    
-    
-## trait events
-
-The class has following internal singleton variables:
-        
-        
-### <a name="_on"></a>::on(en, ef)
-`en` Event name
- 
-
-Binds event name to event function
-```javascript
-if(!this._ev) this._ev = {};
-if(!this._ev[en]) this._ev[en] = [];
-
-this._ev[en].push(ef);
-
-return this;
-```
-
-### <a name="_trigger"></a>::trigger(en, data, fn)
-
-triggers event with data and optional function
-```javascript
-
-if(!this._ev) return;
-if(!this._ev[en]) return;
-var me = this;
-this._ev[en].forEach( function(cb) { cb( data, fn) } );    
-return this;
-```
-
-
-    
-    
 
 
    
-      
-    
 
 
 
@@ -2237,46 +1916,9 @@ return _promise(
 
 
    
-    
-## trait events
-
-The class has following internal singleton variables:
-        
-        
-### <a name="_on"></a>::on(en, ef)
-`en` Event name
- 
-
-Binds event name to event function
-```javascript
-if(!this._ev) this._ev = {};
-if(!this._ev[en]) this._ev[en] = [];
-
-this._ev[en].push(ef);
-
-return this;
-```
-
-### <a name="_trigger"></a>::trigger(en, data, fn)
-
-triggers event with data and optional function
-```javascript
-
-if(!this._ev) return;
-if(!this._ev[en]) return;
-var me = this;
-this._ev[en].forEach( function(cb) { cb( data, fn) } );    
-return this;
-```
-
-
-    
-    
 
 
    
-      
-    
 
 
 
@@ -2429,46 +2071,9 @@ if(fn) {
 
 
    
-    
-## trait events
-
-The class has following internal singleton variables:
-        
-        
-### <a name="_on"></a>::on(en, ef)
-`en` Event name
- 
-
-Binds event name to event function
-```javascript
-if(!this._ev) this._ev = {};
-if(!this._ev[en]) this._ev[en] = [];
-
-this._ev[en].push(ef);
-
-return this;
-```
-
-### <a name="_trigger"></a>::trigger(en, data, fn)
-
-triggers event with data and optional function
-```javascript
-
-if(!this._ev) return;
-if(!this._ev[en]) return;
-var me = this;
-this._ev[en].forEach( function(cb) { cb( data, fn) } );    
-return this;
-```
-
-
-    
-    
 
 
    
-      
-    
 
 
 
