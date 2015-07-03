@@ -1138,9 +1138,10 @@
         };
 
         /**
-         * @param float str
+         * @param string str
          */
         _myTrait_._textLinesToArray = function (str) {
+          if (!str || typeof str != "string") return [];
           var a = str.split("\n");
           var res = [];
           a.forEach(function (line) {
