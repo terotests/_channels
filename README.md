@@ -32,6 +32,8 @@ The journal is file has changes to the main file Object like this:
 [4,"y",100,null, "myGuid"]
 ```
 
+Where first item `4` means command "set value", "x" is the property, then followed by new value, old value and object ID.
+
 After which the main file would look something like this:
 
 ```javascript
