@@ -1345,11 +1345,13 @@ The class has following internal singleton variables:
 * _socketRooms
         
         
-### _serverChannelMgr::constructor( serverSocket, fileSystem )
+### _serverChannelMgr::constructor( serverSocket, fileSystem, authManager )
 
 ```javascript
 
 this._server = serverSocket;
+this._auth = authManager;
+var me = this;
 
 // The server which manages the client connections is here..
 
@@ -1363,8 +1365,22 @@ this._server.on("connect", function( socket ) {
         responseFn({ success : true, channelId: cData.channelId});
     });
     socket.on("auth", function(cData, responseFn) {
-        socket.setAuthInfo( cData.userId, ["users"] );
-        responseFn( { success : true, userId: socket.getUserId() });
+
+        if(authManager) {
+            authManager.login(cData.userId, cData.password).then( function(res) {
+                if(res.result === true) {
+                    var UID = res.userId;
+                    var groups = res.groups;
+                    socket.setAuthInfo( UID, groups);
+                    responseFn( { success : true, userId: socket.getUserId(), groups : res.groups });
+                } else {
+                    responseFn( { success : false, userId: null });
+                }
+            })
+        } else {
+            responseFn( { success : false, userId: null });
+        }
+        
     });        
     socket.on("authenticate", function(cData, responseFn) {
         socket.setAuthInfo( cData.userId, ["users"] );

@@ -904,9 +904,11 @@
 
         if (_myTrait_.__traitInit && !_myTrait_.hasOwnProperty("__traitInit")) _myTrait_.__traitInit = _myTrait_.__traitInit.slice();
         if (!_myTrait_.__traitInit) _myTrait_.__traitInit = [];
-        _myTrait_.__traitInit.push(function (serverSocket, fileSystem) {
+        _myTrait_.__traitInit.push(function (serverSocket, fileSystem, authManager) {
 
           this._server = serverSocket;
+          this._auth = authManager;
+          var me = this;
 
           // The server which manages the client connections is here..
 
@@ -923,11 +925,31 @@
               });
             });
             socket.on("auth", function (cData, responseFn) {
-              socket.setAuthInfo(cData.userId, ["users"]);
-              responseFn({
-                success: true,
-                userId: socket.getUserId()
-              });
+
+              if (authManager) {
+                authManager.login(cData.userId, cData.password).then(function (res) {
+                  if (res.result === true) {
+                    var UID = res.userId;
+                    var groups = res.groups;
+                    socket.setAuthInfo(UID, groups);
+                    responseFn({
+                      success: true,
+                      userId: socket.getUserId(),
+                      groups: res.groups
+                    });
+                  } else {
+                    responseFn({
+                      success: false,
+                      userId: null
+                    });
+                  }
+                });
+              } else {
+                responseFn({
+                  success: false,
+                  userId: null
+                });
+              }
             });
             socket.on("authenticate", function (cData, responseFn) {
               socket.setAuthInfo(cData.userId, ["users"]);
