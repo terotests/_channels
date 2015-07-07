@@ -106,17 +106,26 @@ The socket.io abstraction can simulate multiple servers in browser. To create se
 var server = _serverSocket("localhost", 1234);  
 ```
 
+## Create authentication manager
+
+See [authFuzz](https://github.com/terotests/authFuzz) on how to create authentication filesystem.
+
+```javascript
+var authManager = authFuzz(fsRoot);  
+```
+
 ## Creating a server side channel manager
 
 Before was created
 
 1. Filesystem
 2. Socket listener
+3. Authentication manager
 
 To connect these to server side channel manager:
 
 ```javascript
-var manager = _serverChannelMgr( server, filesystem.getRootFolder() );
+var manager = _serverChannelMgr( server, filesystem.getRootFolder(), authManager );
 ```
 
 The filesystem and socket.io server could be real, but in this phase we use only virtual sockets and virtual filesystem.
@@ -153,7 +162,10 @@ Currently the authentication does not really authenticate, however it is still r
 
 Success message:
 ```javascript
-{ success : true, userId: "theUserId" }
+{ success : true, 
+  userId  : "theUserId", 
+  groups : []              // the groups for the user, "users", "admins" etc.
+}
 ``` 
 
 ## Requesting access to channel : "requestChannel" 
