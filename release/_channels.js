@@ -914,14 +914,16 @@
 
           this._server.on("connect", function (socket) {
 
-            // TODO: add authentication here...
+            // TODO: socket could be listening to multiple channels...
 
-            // Here is simple example of the requestChannel...
+            var ctrl; // the channel controller
+
             socket.on("requestChannel", function (cData, responseFn) {
 
               fileSystem.findPath(cData.channelId).then(function (fold) {
                 if (fold) {
                   socket.join(cData.channelId);
+                  ctrl = _channelController(cData.channelId, fileSystem);
                   responseFn({
                     success: true,
                     channelId: cData.channelId
@@ -988,18 +990,7 @@
                 return;
               }
 
-              /*
-              Assume command format: {
-              channelId : "alfa",
-              cmd : "commandName",
-              data : "the command data
-              }
-              */
-              // 1. check if the socket belongs to the channel
-              // 2. then send the command to the channel
-
-              // Important point: the file system is passed here to the _channelController
-              var ctrl = _channelController(cmd.channelId, fileSystem);
+              // the command for the channel controller...
               ctrl.run(cmd, function (resp) {
                 if (responseFn) responseFn(resp);
               }, socket);
