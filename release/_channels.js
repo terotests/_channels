@@ -918,10 +918,20 @@
 
             // Here is simple example of the requestChannel...
             socket.on("requestChannel", function (cData, responseFn) {
-              socket.join(cData.channelId);
-              responseFn({
-                success: true,
-                channelId: cData.channelId
+
+              fileSystem.findPath(cData.channelId).then(function (fold) {
+                if (fold) {
+                  socket.join(cData.channelId);
+                  responseFn({
+                    success: true,
+                    channelId: cData.channelId
+                  });
+                } else {
+                  responseFn({
+                    success: false,
+                    channelId: null
+                  });
+                }
               });
             });
             socket.on("auth", function (cData, responseFn) {
@@ -950,13 +960,6 @@
                   userId: null
                 });
               }
-            });
-            socket.on("authenticate", function (cData, responseFn) {
-              socket.setAuthInfo(cData.userId, ["users"]);
-              responseFn({
-                success: true,
-                userId: socket.getUserId()
-              });
             });
 
             socket.on("whoami", function (cData, responseFn) {
