@@ -1827,13 +1827,15 @@
 
               // ERROR: should be checking the results here...
               // might also write to the actual file-buffer here...
-              me._model.writeToJournal(cmd.data.commands).then(function (r) {
 
+              if (res.validCnt > 0) {
+                cmd.data.commands.length = res.validCnt;
+                me._model.writeToJournal(cmd.data.commands).then(function (r) {
+                  result(res);
+                });
+              } else {
                 result(res);
-
-                //socket.broadcast.to(cmd.channelId).emit("ch_"+cmd.channelId, cmd );
-                //result({ ok : true});
-              });
+              }
               // result(res);
 
               /*
