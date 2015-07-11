@@ -1091,11 +1091,13 @@
         // Initialize static variables here...
 
         if (!_myTrait_.hasOwnProperty("__factoryClass")) _myTrait_.__factoryClass = [];
-        _myTrait_.__factoryClass.push(function (id) {
+        _myTrait_.__factoryClass.push(function (id, fileSystem) {
 
           if (!_instances) {
             _instances = {};
           }
+
+          id = id + fileSystem.id();
 
           if (_instances[id]) {
             return _instances[id];
@@ -1668,10 +1670,12 @@
         // Initialize static variables here...
 
         if (!_myTrait_.hasOwnProperty("__factoryClass")) _myTrait_.__factoryClass = [];
-        _myTrait_.__factoryClass.push(function (id, manual) {
+        _myTrait_.__factoryClass.push(function (id, fileSystem) {
           if (!_instances) {
             _instances = {};
           }
+
+          id = id + fileSystem.id();
 
           if (_instances[id]) {
             return _instances[id];
@@ -1823,6 +1827,9 @@
                 return;
               }
 
+              // alert(cmd.data.from);
+              // alert(me._chData.getJournalLine());
+
               var res = me._tManager.execute(cmd.data);
 
               // ERROR: should be checking the results here...
@@ -1831,6 +1838,7 @@
               if (res.validCnt > 0) {
                 cmd.data.commands.length = res.validCnt;
                 me._model.writeToJournal(cmd.data.commands).then(function (r) {
+                  socket.broadcast.to(cmd.channelId).emit("frame_" + cmd.channelId, cmd);
                   result(res);
                 });
               } else {
@@ -1894,7 +1902,7 @@
           this._model.readBuildTree().then(function (r) {
             // the build tree
             var mainData = r.pop();
-            var dataTest = _channelData(channelId, mainData, []);
+            var dataTest = _channelData(channelId + fileSystem.id(), mainData, []);
             var list = r.pop();
 
             // NOW, here is a problem, the in-memory channel "journal" should be truncated
@@ -1913,7 +1921,7 @@
               me._acl = nfs4_acl(data.__acl);
             }
 
-            me._tManager = _channelTransaction(channelId, dataTest);
+            me._tManager = _channelTransaction(channelId + fileSystem.id(), dataTest);
 
             // And, here it is finally then...
             me._chData = dataTest;

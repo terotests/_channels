@@ -1469,7 +1469,7 @@ The class has following internal singleton variables:
 * _instances
         
         
-### <a name="_localChannelModel__classFactory"></a>_localChannelModel::_classFactory(id)
+### <a name="_localChannelModel__classFactory"></a>_localChannelModel::_classFactory(id, fileSystem)
 
 
 ```javascript
@@ -1477,6 +1477,8 @@ The class has following internal singleton variables:
 if(!_instances) {
     _instances = {};
 }
+
+id = id + fileSystem.id();
 
 if(_instances[id]) {
     return _instances[id];
@@ -2076,13 +2078,15 @@ The class has following internal singleton variables:
 * _cmds
         
         
-### <a name="_channelController__classFactory"></a>_channelController::_classFactory(id, manual)
+### <a name="_channelController__classFactory"></a>_channelController::_classFactory(id, fileSystem)
 
 
 ```javascript
 if(!_instances) {
     _instances = {};
 }
+
+id = id + fileSystem.id();
 
 if(_instances[id]) {
     return _instances[id];
@@ -2193,6 +2197,9 @@ this._cmds = {
     },
     changeFrame : function( cmd, result, socket ) {
         if(!me._groupACL(socket, "w")) { result(null); return; }
+        
+        // alert(cmd.data.from);
+        // alert(me._chData.getJournalLine());
 
         var res = me._tManager.execute( cmd.data );
         
@@ -2202,6 +2209,7 @@ this._cmds = {
         if(res.validCnt > 0 ) {
             cmd.data.commands.length = res.validCnt;
             me._model.writeToJournal( cmd.data.commands ).then( function(r) {
+                socket.broadcast.to(cmd.channelId).emit("frame_"+cmd.channelId, cmd );
                 result(res);
             });        
         } else {
@@ -2254,7 +2262,7 @@ var me = this;
 this._model.readBuildTree( ).then( function(r) {
     // the build tree
     var mainData = r.pop();
-    var dataTest = _channelData( channelId, mainData, [] );
+    var dataTest = _channelData( channelId+ fileSystem.id(), mainData, [] );
     var list = r.pop();
     
     // NOW, here is a problem, the in-memory channel "journal" should be truncated
@@ -2273,7 +2281,7 @@ this._model.readBuildTree( ).then( function(r) {
         me._acl = nfs4_acl( data.__acl );
     }
     
-    me._tManager = _channelTransaction(channelId, dataTest);
+    me._tManager = _channelTransaction(channelId + fileSystem.id(), dataTest);
     
     // And, here it is finally then...
     me._chData = dataTest;
