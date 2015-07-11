@@ -915,18 +915,17 @@
           this._server.on("connect", function (socket) {
 
             // TODO: socket could be listening to multiple channels...
-
-            var ctrl; // the channel controller
-
+            var ctrl; // the channel controllel
             socket.on("requestChannel", function (cData, responseFn) {
-
               fileSystem.findPath(cData.channelId).then(function (fold) {
                 if (fold) {
                   socket.join(cData.channelId);
                   ctrl = _channelController(cData.channelId, fileSystem);
-                  responseFn({
-                    success: true,
-                    channelId: cData.channelId
+                  ctrl.then(function () {
+                    responseFn({
+                      success: true,
+                      channelId: cData.channelId
+                    });
                   });
                 } else {
                   responseFn({
@@ -943,6 +942,7 @@
                   if (res.result === true) {
                     var UID = res.userId;
                     var groups = res.groups;
+                    console.log("AUTH groups ", res.groups);
                     socket.setAuthInfo(UID, groups);
                     responseFn({
                       success: true,
@@ -1374,7 +1374,10 @@
             me.then(function () {
               return me.readMain(version); // first get the main
             }).then(function (mainFileRead) {
-              mainFile = mainFileRead;
+              if (mainFileRead) {
+                mainFile = JSON.parse(mainFileRead);
+              }
+              //             mainFile = mainFileRead;
               return me.readJournal(version);
             }).then(function (journal) {
               journalFile = journal;
@@ -1613,8 +1616,6 @@
 
         if (!_myTrait_.hasOwnProperty("__factoryClass")) _myTrait_.__factoryClass = [];
         _myTrait_.__factoryClass.push(function (id, manual) {
-          if (id === false && manual) return;
-
           if (!_instances) {
             _instances = {};
           }
@@ -1627,6 +1628,27 @@
         });
 
         /**
+         * @param float socket
+         * @param float flags
+         */
+        _myTrait_._groupACL = function (socket, flags) {
+
+          var me = this;
+          if (!me._acl) return false;
+
+          var roles = socket.getUserRoles();
+          var a_ok = false;
+          for (var i = 0; i < roles.length; i++) {
+            // must have "read attributes" and "read ACL flags"
+            if (me._acl.find("", roles[i] + "@", flags)) {
+              a_ok = true;
+              break;
+            }
+          }
+          return a_ok;
+        };
+
+        /**
          * @param float t
          */
         _myTrait_._initCmds = function (t) {
@@ -1636,27 +1658,55 @@
 
           var me = this;
           this._cmds = {
-            treeOfLife: function treeOfLife(cmd, result) {
+            treeOfLife: function treeOfLife(cmd, result, socket) {
+              if (!me._groupACL(socket, "r")) {
+                result(null);
+                return;
+              }
+
               me._model.treeOfLife().then(function (r) {
                 result(r);
               });
             },
-            readBuildTree: function readBuildTree(cmd, result) {
+            readBuildTree: function readBuildTree(cmd, result, socket) {
+              if (!me._groupACL(socket, "r")) {
+                result(null);
+                return;
+              }
               me._model.readBuildTree().then(function (r) {
                 result(r);
               });
             },
-            getForks: function getForks(cmd, result) {
+            getForks: function getForks(cmd, result, socket) {
+              if (!me._groupACL(socket, "r")) {
+                result(null);
+                return;
+              }
               me._model.getForks().then(function (r) {
                 result(r);
               });
             },
-            channelStatus: function channelStatus(cmd, result) {
+            channelStatus: function channelStatus(cmd, result, socket) {
+              if (!me._groupACL(socket, "tc")) {
+                result(null);
+                return;
+              }
               me._model.status().then(function (r) {
                 result(r);
               });
             },
-            fork: function fork(cmd, result) {
+            raw: function raw(cmd, result, socket) {
+              if (me._groupACL(socket, "tc")) {
+                result(me._chData.getData());
+              } else {
+                result(null);
+              }
+            },
+            fork: function fork(cmd, result, socket) {
+              if (!me._groupACL(socket, "w")) {
+                result(null);
+                return;
+              }
               if (!cmd.data) {
                 result({
                   ok: false
@@ -1667,8 +1717,11 @@
                 result(r);
               });
             },
-            snapshot: function snapshot(cmd, result) {
-
+            snapshot: function snapshot(cmd, result, socket) {
+              if (!me._groupACL(socket, "w")) {
+                result(null);
+                return;
+              }
               if (!cmd.data) {
                 result({
                   ok: false
@@ -1682,24 +1735,40 @@
                 });
               });
             },
-            writeMain: function writeMain(cmd, result) {
+            writeMain: function writeMain(cmd, result, socket) {
+              if (!me._groupACL(socket, "w")) {
+                result(null);
+                return;
+              }
               me._model.writeFile("main", cmd.data).then(function (r) {
                 result({
                   ok: true
                 });
               });
             },
-            readMain: function readMain(cmd, result) {
+            readMain: function readMain(cmd, result, socket) {
+              if (!me._groupACL(socket, "r")) {
+                result(null);
+                return;
+              }
               me._model.readMain().then(function (r) {
                 result(r);
               });
             },
-            readMainVersion: function readMainVersion(cmd, result) {
+            readMainVersion: function readMainVersion(cmd, result, socket) {
+              if (!me._groupACL(socket, "r")) {
+                result(null);
+                return;
+              }
               me._model.readMain(cmd.data).then(function (r) {
                 result(r);
               });
             },
             writeJournal: function writeJournal(cmd, result, socket) {
+              if (!me._groupACL(socket, "w")) {
+                result(null);
+                return;
+              }
               me._model.writeToJournal(cmd.data).then(function (r) {
                 socket.broadcast.to(cmd.channelId).emit("ch_" + cmd.channelId, cmd);
                 result({
@@ -1707,12 +1776,20 @@
                 });
               });
             },
-            readJournal: function readJournal(cmd, result) {
+            readJournal: function readJournal(cmd, result, socket) {
+              if (!me._groupACL(socket, "r")) {
+                result(null);
+                return;
+              }
               me._model.readJournal().then(function (r) {
                 result(r);
               });
             },
-            readJournalVersion: function readJournalVersion(cmd, result) {
+            readJournalVersion: function readJournalVersion(cmd, result, socket) {
+              if (!me._groupACL(socket, "r")) {
+                result(null);
+                return;
+              }
               me._model.readJournal(cmd.data).then(function (r) {
                 result(r);
               });
@@ -1729,6 +1806,31 @@
 
           // important point: the file system is passed here to the local channel model
           this._model = _localChannelModel(channelId, fileSystem);
+
+          var me = this;
+
+          // Then, construct the channel model from the data
+          this._model.readBuildTree().then(function (r) {
+            // the build tree
+            var mainData = r.pop();
+            var dataTest = _channelData(channelId, mainData, []);
+            var list = r.pop();
+            while (list) {
+              list.forEach(function (c) {
+                dataTest.execCmd(c);
+              });
+              list = r.pop();
+            }
+
+            var data = dataTest.getData();
+            if (data.__acl) {
+              me._acl = nfs4_acl(data.__acl);
+            }
+
+            // And, here it is finally then...
+            me._chData = dataTest;
+            me.resolve(true);
+          });
 
           this._initCmds();
         });
@@ -1778,7 +1880,9 @@
         }
       } else return new _channelController(a, b, c, d, e, f, g, h);
     };
-    // inheritance is here
+    // inheritance is here _promise
+
+    _channelController_prototype.prototype = _promise.prototype;
 
     _channelController._classInfo = {
       name: "_channelController"
