@@ -1048,6 +1048,43 @@
     var _localChannelModel_prototype = function _localChannelModel_prototype() {
       // Then create the traits and subclasses for this class here...
 
+      // trait comes here...
+
+      (function (_myTrait_) {
+
+        // Initialize static variables here...
+
+        /**
+         * @param float t
+         */
+        _myTrait_.guid = function (t) {
+
+          return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        };
+
+        /**
+         * @param float t
+         */
+        _myTrait_.isArray = function (t) {
+          return Object.prototype.toString.call(t) === "[object Array]";
+        };
+
+        /**
+         * @param float fn
+         */
+        _myTrait_.isFunction = function (fn) {
+          return Object.prototype.toString.call(fn) == "[object Function]";
+        };
+
+        /**
+         * @param float t
+         */
+        _myTrait_.isObject = function (t) {
+
+          return t === Object(t);
+        };
+      })(this);
+
       (function (_myTrait_) {
         var _instances;
 
@@ -1547,6 +1584,22 @@
           var local = this._folder,
               me = this;
 
+          if (this.isArray(row[0])) {
+            var str = "",
+                cnt = 0;
+            row.forEach(function (r) {
+              str += JSON.stringify(r) + "\n";
+              cnt++;
+            });
+            return _promise(function (resp) {
+              local.appendFile("journal." + me._settings.version, str).then(function () {
+                me._settings.journalLine += cnt;
+                me._writeSettings();
+                resp(true);
+              });
+            });
+          }
+
           return _promise(function (resp) {
             local.appendFile("journal." + me._settings.version, JSON.stringify(row) + "\n").then(function () {
               me._settings.journalLine++;
@@ -1764,6 +1817,32 @@
                 result(r);
               });
             },
+            changeFrame: function changeFrame(cmd, result, socket) {
+              if (!me._groupACL(socket, "w")) {
+                result(null);
+                return;
+              }
+
+              var res = me._tManager.execute(cmd.data);
+
+              // ERROR: should be checking the results here...
+              // might also write to the actual file-buffer here...
+              me._model.writeToJournal(cmd.data.commands).then(function (r) {
+
+                result(res);
+
+                //socket.broadcast.to(cmd.channelId).emit("ch_"+cmd.channelId, cmd );
+                //result({ ok : true});
+              });
+              // result(res);
+
+              /*
+              me._model.writeToJournal( cmd.data ).then( function(r) {
+              socket.broadcast.to(cmd.channelId).emit("ch_"+cmd.channelId, cmd );
+              result({ ok : true}); 
+              });
+              */
+            },
             writeJournal: function writeJournal(cmd, result, socket) {
               if (!me._groupACL(socket, "w")) {
                 result(null);
@@ -1815,7 +1894,12 @@
             var mainData = r.pop();
             var dataTest = _channelData(channelId, mainData, []);
             var list = r.pop();
+
+            // NOW, here is a problem, the in-memory channel "journal" should be truncated
+
             while (list) {
+              dataTest._journalPointer = 0;
+              dataTest._journal.length = 0; // <-- the journal length, last will be spared
               list.forEach(function (c) {
                 dataTest.execCmd(c);
               });
@@ -1826,6 +1910,8 @@
             if (data.__acl) {
               me._acl = nfs4_acl(data.__acl);
             }
+
+            me._tManager = _channelTransaction(channelId, dataTest);
 
             // And, here it is finally then...
             me._chData = dataTest;

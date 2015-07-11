@@ -425,9 +425,22 @@ Current for documentation see source code of _localChannelModel or _channelContr
 
 
    
+    
+##### trait _dataTrait
+
+- [guid](README.md#_dataTrait_guid)
+- [isArray](README.md#_dataTrait_isArray)
+- [isFunction](README.md#_dataTrait_isFunction)
+- [isObject](README.md#_dataTrait_isObject)
+
+
+    
+    
 
 
    
+      
+    
 
 
 
@@ -1968,6 +1981,23 @@ return local.writeFile( "file."+versionNumber, data);
 
 var local = this._folder, me = this;
 
+if(this.isArray(row[0])) {
+    var str = "", cnt=0;
+    row.forEach(function(r) {
+        str+=JSON.stringify(r)+"\n";
+        cnt++;
+    });
+    return _promise(
+        function(resp) {
+            local.appendFile( "journal."+me._settings.version, str)
+                .then( function() {
+                    me._settings.journalLine+=cnt;
+                    me._writeSettings();
+                    resp(true);
+                })
+        });    
+}
+
 return _promise(
     function(resp) {
         local.appendFile( "journal."+me._settings.version, JSON.stringify(row)+"\n")
@@ -1983,9 +2013,52 @@ return _promise(
 
 
    
+    
+## trait _dataTrait
+
+The class has following internal singleton variables:
+        
+        
+### <a name="_dataTrait_guid"></a>_dataTrait::guid(t)
+
+
+```javascript
+
+return Math.random().toString(36).substring(2, 15) +
+        Math.random().toString(36).substring(2, 15);
+
+```
+
+### <a name="_dataTrait_isArray"></a>_dataTrait::isArray(t)
+
+
+```javascript
+return Object.prototype.toString.call( t ) === '[object Array]';
+```
+
+### <a name="_dataTrait_isFunction"></a>_dataTrait::isFunction(fn)
+
+
+```javascript
+return Object.prototype.toString.call(fn) == '[object Function]';
+```
+
+### <a name="_dataTrait_isObject"></a>_dataTrait::isObject(t)
+
+
+```javascript
+
+return t === Object(t);
+```
+
+
+    
+    
 
 
    
+      
+    
 
 
 
@@ -2118,6 +2191,29 @@ this._cmds = {
             result(r); 
         });
     },
+    changeFrame : function( cmd, result, socket ) {
+        if(!me._groupACL(socket, "w")) { result(null); return; }
+
+        var res = me._tManager.execute( cmd.data );
+        
+        // ERROR: should be checking the results here...
+        // might also write to the actual file-buffer here...
+        me._model.writeToJournal( cmd.data.commands ).then( function(r) {
+            
+            result(res);
+            
+            //socket.broadcast.to(cmd.channelId).emit("ch_"+cmd.channelId, cmd );
+            //result({ ok : true}); 
+        });        
+        // result(res);
+        
+        /*
+        me._model.writeToJournal( cmd.data ).then( function(r) {
+            socket.broadcast.to(cmd.channelId).emit("ch_"+cmd.channelId, cmd );
+            result({ ok : true}); 
+        });
+        */
+    },    
     writeJournal : function( cmd, result, socket ) {
         if(!me._groupACL(socket, "w")) { result(null); return; }
         me._model.writeToJournal( cmd.data ).then( function(r) {
@@ -2158,7 +2254,12 @@ this._model.readBuildTree( ).then( function(r) {
     var mainData = r.pop();
     var dataTest = _channelData( channelId, mainData, [] );
     var list = r.pop();
+    
+    // NOW, here is a problem, the in-memory channel "journal" should be truncated
+
     while(list) {
+        dataTest._journalPointer = 0;
+        dataTest._journal.length = 0; // <-- the journal length, last will be spared
         list.forEach( function(c) {
             dataTest.execCmd(c);
         });
@@ -2169,6 +2270,8 @@ this._model.readBuildTree( ).then( function(r) {
     if(data.__acl) {
         me._acl = nfs4_acl( data.__acl );
     }
+    
+    me._tManager = _channelTransaction(channelId, dataTest);
     
     // And, here it is finally then...
     me._chData = dataTest;
