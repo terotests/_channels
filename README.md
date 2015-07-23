@@ -2196,10 +2196,15 @@ this._cmds = {
         });
     },
     changeFrame : function( cmd, result, socket ) {
+        
         if(!me._groupACL(socket, "w")) { result(null); return; }
         
         // alert(cmd.data.from);
         // alert(me._chData.getJournalLine());
+
+        debugger;
+        console.log("**** change frame arrived **** ");
+        console.log(cmd.data);
 
         var res = me._tManager.execute( cmd.data );
         
