@@ -384,6 +384,9 @@ Current for documentation see source code of _localChannelModel or _channelContr
 #### Class _serverChannelMgr
 
 
+- [addSocketToCh](README.md#_serverChannelMgr_addSocketToCh)
+- [getSocketsFromCh](README.md#_serverChannelMgr_getSocketsFromCh)
+- [removeSocketFromCh](README.md#_serverChannelMgr_removeSocketFromCh)
 
 
 
@@ -404,6 +407,7 @@ Current for documentation see source code of _localChannelModel or _channelContr
 - [_classFactory](README.md#_localChannelModel__classFactory)
 - [_createChannelDir](README.md#_localChannelModel__createChannelDir)
 - [_createChannelSettings](README.md#_localChannelModel__createChannelSettings)
+- [_isFreeToFork](README.md#_localChannelModel__isFreeToFork)
 - [_textLinesToArray](README.md#_localChannelModel__textLinesToArray)
 - [_writeSettings](README.md#_localChannelModel__writeSettings)
 - [childForkTree](README.md#_localChannelModel_childForkTree)
@@ -451,9 +455,12 @@ Current for documentation see source code of _localChannelModel or _channelContr
 #### Class _channelController
 
 
+- [_askChUpgrade](README.md#_channelController__askChUpgrade)
 - [_classFactory](README.md#_channelController__classFactory)
+- [_doClientUpdate](README.md#_channelController__doClientUpdate)
 - [_groupACL](README.md#_channelController__groupACL)
 - [_initCmds](README.md#_channelController__initCmds)
+- [_updateLoop](README.md#_channelController__updateLoop)
 - [run](README.md#_channelController_run)
 
 
@@ -1235,9 +1242,10 @@ if(!this._commands) {
 
 var me = this;
 if(!manual) {
-    later().every(1/30, function() {
+    var _secStep = function() {
         me.step();
-    });
+    }
+    later().every(1/30, _secStep);
 }
 
 ```
@@ -1371,28 +1379,63 @@ The class has following internal singleton variables:
 * _socketRooms
         
         
+### <a name="_serverChannelMgr_addSocketToCh"></a>_serverChannelMgr::addSocketToCh(chId, socket)
+
+
+```javascript
+
+if(!this._channelSockets[chId]) {
+    this._channelSockets[chId] = [];
+}
+if(this._channelSockets[chId].indexOf(socket) < 0 ) {
+    this._channelSockets[chId].push(socket);
+}
+```
+
+### <a name="_serverChannelMgr_getSocketsFromCh"></a>_serverChannelMgr::getSocketsFromCh(chId)
+
+
+```javascript
+if(!this._channelSockets[chId]) return [];
+
+return this._channelSockets[chId];
+```
+
 ### _serverChannelMgr::constructor( serverSocket, fileSystem, authManager )
 
 ```javascript
 
 this._server = serverSocket;
 this._auth = authManager;
+
+this._channelSockets = {};
+
 var me = this;
 
 // The server which manages the client connections is here..
 
 this._server.on("connect", function( socket ) {
 
-    // TODO: socket could be listening to multiple channels...
-    var ctrl; // the channel controllel
+    // keeps track of channels the socket is registered into    
+    var _socketChannels = [];
+    var ctrl; // the channel controller
+
     socket.on("requestChannel", function(cData, responseFn) {
         fileSystem.findPath(cData.channelId).then( function(fold) {
             if(fold) {
-                socket.join(cData.channelId);
-                ctrl = _channelController( cData.channelId, fileSystem );
+                
+                // require first to authenticate, at least read access to join
+                ctrl = _channelController( cData.channelId, fileSystem, me );
                 ctrl.then( 
                     function() {
-                        responseFn({ success : true, channelId: cData.channelId});
+                        if(ctrl._groupACL(socket, "r")) {
+                            socket.join(cData.channelId);
+                            me.addSocketToCh(  cData.channelId, socket );
+                            _socketChannels.push( cData.channelId );
+                            responseFn({ success : true, channelId: cData.channelId});
+                        } else {
+                            responseFn({ success : false, channelId: null});
+                        }
                     });
                 
             } else {
@@ -1401,6 +1444,16 @@ this._server.on("connect", function( socket ) {
             
         })
     });
+    
+    socket.on("disconnect", function() {
+        // console.log("--- channel manager got disconnect to the service pool ---- "); 
+        // console.log("TODO: remove the channel so that it will not leak memory");
+        // me.removeSocketFromCh(  socket );
+        _socketChannels.forEach( function(chId) {
+            me.removeSocketFromCh(chId, socket );
+        });
+    });
+    
     socket.on("auth", function(cData, responseFn) {
 
         if(authManager) {
@@ -1420,10 +1473,7 @@ this._server.on("connect", function( socket ) {
         }
         
     });        
-    
-    socket.on("whoami", function(cData, responseFn) {
-        responseFn( { success : true, userId: socket.getUserId() });
-    });     
+  
 
     // messages to the channel from the socket
     socket.on("channelCommand", function(cmd, responseFn) {
@@ -1448,6 +1498,18 @@ this._server.on("connect", function( socket ) {
 });
 ```
         
+### <a name="_serverChannelMgr_removeSocketFromCh"></a>_serverChannelMgr::removeSocketFromCh(chId, socket)
+
+
+```javascript
+if(!this._channelSockets[chId]) return;
+
+var i=this._channelSockets[chId].indexOf(socket);
+if(i >= 0 ) {
+    this._channelSockets[chId].splice(i,1);
+}
+```
+
 
 
    
@@ -1577,6 +1639,57 @@ return _promise( function(result) {
 });
 ```
 
+### <a name="_localChannelModel__isFreeToFork"></a>_localChannelModel::_isFreeToFork(channelId)
+
+
+```javascript
+var str = channelId;
+if(str.charAt(0)=="/") str = str.substring(1);
+
+var parts = str.split("/");
+var fs = this._fs,
+    activeFolder = fs;
+
+var actPromise = _promise();
+var originalPromise = actPromise;
+var me = this,
+    isFree = false;
+
+parts.forEach( 
+    function(pathStr) {
+        
+        pathStr = pathStr.trim();
+        if(pathStr.length==0) return;
+        actPromise = actPromise.then( function() {
+                         if(isFree) return isFree;
+                         return activeFolder.isFolder(pathStr);
+                    }).then( function(isFolder) {
+                        if(isFree) return;
+                        if(!isFolder) {
+                            isFree = true; // the folder path is free...
+                            return isFree;
+                        } else {
+                            return isFree;
+                        }
+                    }).then( function() {
+                        if(isFree) return isFree;
+                        // get next level..
+                        return activeFolder.getFolder(pathStr);         
+                    }).then( function(f) {
+                        if(isFree) return isFree;
+                        activeFolder =  f;
+                    });
+    });
+    
+// after all done, place the active folder for our fs pointer
+actPromise = actPromise.then( function() {
+   return isFree;
+});
+originalPromise.resolve(true);
+
+return actPromise;
+```
+
 ### <a name="_localChannelModel__textLinesToArray"></a>_localChannelModel::_textLinesToArray(str)
 
 
@@ -1641,20 +1754,29 @@ var local = this._folder, me = this;
 /*
 // The basic data is like this
 {
-               version : 1,
-               name : "Initial version",
-               utc : (new Date()).getTime(),
-               journalLine : 0
+   version : 1,
+   name : "Initial version",
+   utc : (new Date()).getTime(),
+   journalLine : 0,
+   channelId : "my/channel/fork1/"
 }
 */
 
 return _promise( 
     function(response) {
-        
+
+        // ?? should we use the journal line provided by the forkData
         var settings = me._settings;
+        
+        var fromLine = settings.journalLine || 0;
+        if(typeof( forkData.journalLine ) != "undefined" ) {
+            fromLine = forkData.journalLine;
+        }
+        
+        
         var obj = {
-            fromJournalLine : settings.journalLine,
-            version : 1, 
+            fromJournalLine : fromLine,
+            version : 1,    // the fork version is always 1 
             channelId : forkData.channelId,
             fromVersion : settings.version,
             from : me._channelId,
@@ -1662,15 +1784,38 @@ return _promise(
             name : forkData.name,
             utc : (new Date()).getTime()
         };
-        local.appendFile("forks", JSON.stringify(obj)+"\n")
-            .then( function() {
-                var newChann = _localChannelModel( forkData.channelId, me._fs );
-                newChann.then( function() {
-                    return newChann.set( obj );
-                }).then( function() {
-                    response(obj); 
-                });                
-            })
+        console.log("fork called with ");
+        console.log(obj);
+        
+        // got to check first if the channel is free to be forked
+        me._isFreeToFork(forkData.channelId).then( function(yesNo) {
+            if(yesNo==true) {
+                // TODO: check that the forked channel is valid here
+                local.appendFile("forks", JSON.stringify(obj)+"\n")
+                    .then( function() {
+                        var newChann = _localChannelModel( forkData.channelId, me._fs );
+                        newChann.then( function() {
+                            return newChann.set( obj );
+                        }).then( function() {
+                            response(obj); 
+                        });                
+                    });
+            } else {
+                console.error("Channel already created");
+                response({
+                    result : false,
+                    text : "Channel is already in use"
+                }); 
+            }
+            
+        }).fail( function(e) {
+                console.error(e);
+                response({
+                    result : false,
+                    text : "Creating the fork failed"
+                });             
+        })
+
     });
 
 
@@ -1913,7 +2058,9 @@ return _promise(
             currentVersion = nextVersion-1;
             return me.writeMain( newMainData );
         }).then( function() {
-            me._settings.journalLine = 0;
+            // The incrementVersion() call will do the following
+            // me._settings.journalLine = 0;
+            // me._settings.version = 0;
             done(true);
         });
     });
@@ -2078,6 +2225,24 @@ The class has following internal singleton variables:
 * _cmds
         
         
+### <a name="_channelController__askChUpgrade"></a>_channelController::_askChUpgrade(t)
+
+
+```javascript
+
+var sockets = this._chManager.getSocketsFromCh(this._channelId);
+
+var me = this;
+sockets.forEach( function(socket) {
+    debugger;
+    if(!me._serverState.upgrade) me._serverState.upgrade = {};
+     me._serverState.upgrade[socket.getId()] = {
+         askFull : true,
+         socket : socket
+     };
+});
+```
+
 ### <a name="_channelController__classFactory"></a>_channelController::_classFactory(id, fileSystem)
 
 
@@ -2093,6 +2258,60 @@ if(_instances[id]) {
 } else {
     _instances[id] = this;
 }
+```
+
+### <a name="_channelController__doClientUpdate"></a>_channelController::_doClientUpdate(t)
+
+
+```javascript
+
+var updObj, me = this;
+
+if(!me._serverState) return;
+
+if(me._serverState.upgrade) {
+    
+    for(var n in me._serverState.upgrade) {
+        
+        if(me._serverState.upgrade.hasOwnProperty(n)) {
+            var info = me._serverState.upgrade[n];
+            
+            if(info.socket) {
+                debugger;
+                // do we need a full update or partial update?
+                if(info.version != me._serverState.version || (info.askFull)) {
+                    var fullData = me._serverState.data.getData();
+                    info.socket.emit("upgrade_"+me._channelId, {
+                        version : me._serverState.version,
+                        journal : me._serverState.data._journal,
+                        data : fullData
+                    });                        
+                } else {
+                    var lastJournaLine = info.last_update[1];
+                    info.socket.emit("upgrade_"+me._channelId, {
+                        partialFrom : lastJournaLine,
+                        partialEnds : me._serverState.data._journal.length,
+                        partial : me._serverState.data._journal.slice(lastJournaLine)
+                    });  
+                }
+                delete me._serverState.upgrade[n];
+            }
+        }
+    }
+}
+
+// sending to all the sockets if there is data to be sent
+if(me._broadcastSocket && me._policy) {
+    var data = me._policy.constructServerToClient( me._serverState );  
+    if(data) {
+        if(!updObj) updObj = me._broadcastSocket.to( me._channelId );
+        updObj.emit( "s2c_"+me._channelId, data );
+        me._model.writeToJournal( data.c ).then( function(r) {
+            
+        });               
+    } 
+}
+
 ```
 
 ### <a name="_channelController__groupACL"></a>_channelController::_groupACL(socket, flags)
@@ -2134,8 +2353,17 @@ this._cmds = {
     },
     readBuildTree : function(cmd, result, socket) {
         if(!me._groupACL(socket, "r")) { result(null); return; }
+        
+        // read the build tree and the status...
         me._model.readBuildTree( ).then( function(r) {
-            result(r); 
+            
+            me._model.status().then( function(status) {
+                result({
+                    status : status,
+                    build : r
+                });
+            });
+            // result(r); 
         });        
     },
     getForks : function(cmd, result, socket) {
@@ -2167,14 +2395,35 @@ this._cmds = {
             result(r); 
         });        
     },    
+    // the snapshot command should cause all the sockets to be upgraded
     snapshot : function(cmd, result, socket) {
+        
+        console.log("got snapshot command");
+        
         if(!me._groupACL(socket, "w")) { result(null); return; }
-        if(!cmd.data) {
-            result({ ok : false }); 
-            return;
-        }
-        me._model.snapshot( cmd.data ).then( function(r) {
-            result({ ok : true, snapshot : r }); 
+        
+        var fullData = me._serverState.data.getData();
+        
+        // first, save all the unsaved changes and refresh the clients with unsent data
+        me._doClientUpdate();
+        
+        console.log("About to call me._model.snapshot ");
+        debugger;
+        // then, create new version of the main file
+        me._model.snapshot( fullData ).then( function(r) {
+            
+            // the _serverState data must be also upgraded...
+            me._serverState.version++; // ????
+            me._serverState.data._journal.length = 0;
+            me._serverState.last_update[0] = 0;
+            me._serverState.last_update[1] = 0;
+            
+            console.log("After snapshot ");
+            console.log(me._serverState);
+            
+            // ask channels to upgrade to the latest version of data
+            me._askChUpgrade(me._channelId);
+            result({ ok : true }); 
         });        
     },
     writeMain : function( cmd, result, socket ) {
@@ -2195,6 +2444,44 @@ this._cmds = {
             result(r); 
         });
     },
+    upgradeRequest : function( cmd, result, socket ) {
+
+        if(!me._groupACL(socket, "r")) { result(null); return; }
+        if(!me._serverState.upgrade) {
+            me._serverState.upgrade = {};
+        }
+
+        // the upgrade request sent by the client...
+        cmd.data.socket = socket;
+        me._serverState.upgrade[socket.getId()] = cmd.data;
+        
+        result({ result : true });
+    },     
+    c2s : function( cmd, result, socket ) {
+
+        if(!me._groupACL(socket, "w")) { result(null); return; }
+        
+        var uid = socket.getUserId();
+        var len = cmd.data.c.length,
+            list = cmd.data.c,
+            utc = (new Date).getTime();
+        for(var i=0; i<len; i++) {
+            list[i][5] = utc;
+            list[i][6] = uid;
+        }
+        
+        var res = me._policy.deltaClientToServer( cmd.data, me._serverState );
+        
+        // pick one socket so that we can broadcast if necessary...
+        if(! me._broadcastSocket ) me._broadcastSocket = socket;
+        
+        // in this case we do not write immediately to all clients, just return
+        // the result to the client
+        result(res);
+        
+        // TODO: socket, emit to all clients.
+        
+    },    
     changeFrame : function( cmd, result, socket ) {
         
         if(!me._groupACL(socket, "w")) { result(null); return; }
@@ -2245,12 +2532,24 @@ this._cmds = {
 }
 ```
 
-### _channelController::constructor( channelId, fileSystem )
+### <a name="_channelController__updateLoop"></a>_channelController::_updateLoop(t)
+
+
+```javascript
+
+var me = this;
+later().every(1/5, function() {
+    me._doClientUpdate();
+});
+```
+
+### _channelController::constructor( channelId, fileSystem, chManager )
 
 ```javascript
 
 this._channelId = channelId;
 this._commands = sequenceStepper(channelId);
+this._chManager = chManager;
 
 // important point: the file system is passed here to the local channel model
 this._model = _localChannelModel( channelId, fileSystem );
@@ -2259,13 +2558,14 @@ var me = this;
 
 // Then, construct the channel model from the data
 this._model.readBuildTree( ).then( function(r) {
+    
+
     // the build tree
     var mainData = r.pop();
     var dataTest = _channelData( channelId+ fileSystem.id(), mainData, [] );
     var list = r.pop();
     
     // NOW, here is a problem, the in-memory channel "journal" should be truncated
-
     while(list) {
         dataTest._journalPointer = 0;
         dataTest._journal.length = 0; // <-- the journal length, last will be spared
@@ -2275,12 +2575,27 @@ this._model.readBuildTree( ).then( function(r) {
         list = r.pop();
     }
     
+
+    // The state of the server - what should be the "last_update" ?  
+    me._serverState = {
+        data :          dataTest,                       // The channel data object set here
+        version :       me._model._settings.version,    // the version of the channel model
+        last_update :   [0, dataTest.getJournalLine()],             // the range of last commands sent to the client
+        _done :         {}              // hash of handled packet ID's
+    };    
+    
+    
     var data = dataTest.getData();
     if(data.__acl) {
         me._acl = nfs4_acl( data.__acl );
     }
     
     me._tManager = _channelTransaction(channelId + fileSystem.id(), dataTest);
+    
+    // The channel policy might replace the transaction manager...
+    me._policy = _chPolicy();
+    
+    me._updateLoop(); // start the update loop
     
     // And, here it is finally then...
     me._chData = dataTest;
