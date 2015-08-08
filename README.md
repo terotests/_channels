@@ -2,7 +2,7 @@
 
 This a work in progress for multichannel databroadcasting service with forking capabilities over socket.io.
 
-The first milestone is to create simulation environment in browser.
+The first milestone is to create simulation environment in browser. Tests.
 
 # What is a channel?
 
